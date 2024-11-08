@@ -61,11 +61,11 @@ class Xv6Test(BuildTest, Test):
             )
             self.children.append(gdb_child)
 
-        child.expect_exact("init: starting sh")
-        child.expect_exact("$ ")
+        child.expect_exact("init: starting sh", timeout=self.timeout)
+        child.expect_exact("$ ", timeout=self.timeout)
         child.sendline("tester")
-        child.expect_exact("tester")
-        index = child.expect([r"(.*)\$ ", "panic"])
+        child.expect_exact("tester", timeout=self.timeout)
+        index = child.expect([r"(.*)\$ ", "panic"], timeout=self.timeout)
         # Extract the text between "tester" and "$"/"panic"
         captured_text = child.match.group(1).strip()
 
