@@ -6,13 +6,9 @@
 #include "mmu.h"
 #include "proc.h"
 #include "elf.h"
-#include "wmap.h"
 
 extern char data[];  // defined by kernel.ld
 pde_t *kpgdir;  // for use in scheduler()
-
-// global variable to track wmap
-extern struct wmapinfo wmapTable;
 
 // Set up CPU's kernel segment descriptors.
 // Run once on entry on each CPU.
@@ -396,14 +392,79 @@ copyout(pde_t *pgdir, uint va, void *p, uint len)
 //PAGEBREAK!
 // Blank page.
 
+// helper function to check if 2 virtual address each with a length intersect
+// return 0 if no intersection, 1 if they intersect;
+int vasIntersect(uint addr1, int length1, uint addr2, int length2){
+  if(addr1 == addr2 && length1 > 0 && length2 > 0) return 1;
+  if(addr1 < addr2 && (addr1 + length1) > addr2) return 1;
+  if(addr1 > addr2 && addr1 < (addr2 + length2)) return 1;
+  return 0;
+}
+extern int DEBUG;
+
+
+int insertWmap(struct proc *p, uint addr, int length, int n_loaded_page, int index){
+  if(index < 0) return -1;
+  if(index >= MAX_WMMAP_INFO) return -1;
+
+  ((p->wmapInfo).addr)[index] = addr;
+  ((p->wmapInfo).length)[index] = length;
+  ((p->wmapInfo).n_loaded_pages)[index] = n_loaded_page;
+  (p->wmapInfo).total_mmaps++;
+
+  return 0;
+}
+
+void printWmap(struct proc *p){
+  for(int i=0; i<MAX_WMMAP_INFO; i++){
+	cprintf("For index %d\n", i);
+	cprintf("Addr is %d, length is %d, n_loaded_pages is %d, total mmap is %d\n", ((p->wmapInfo).addr)[i],
+	((p->wmapInfo).length)[i], ((p->wmapInfo).n_loaded_pages)[i], (p->wmapInfo).total_mmaps);
+  }
+}
 
 uint
 wmap(uint addr, int length, int flags, int fd)
 {
+  /*
+	This function has several assumptions:
+	1. MAP_SHARED is always set to true, always write back
+	2. MAP_FIXED is always set to true, always only find virtual address EXACTLY AT addr
+  */
+
   int ignoreFd = 0;
   if(flags & MAP_ANONYMOUS) ignoreFd = 1; // ignore fd
+  if(DEBUG) cprintf("Ignored fd: %d\n", ignoreFd);
+  // now we retrive our process and check if the process have already used the virtual address range
+  struct proc *p = myproc();
+  int emptySpot = -1;
 
-  return -1;
+  // loop through the process wmap to check if the given addr and length are valid
+  if(DEBUG) cprintf("Made it after first checks\n");
+  // loop through the process wmap to check if the given addr and length are valid
+  for(int i = 0; i < MAX_WMMAP_INFO; i++){
+	// check if it is full
+    if((p->wmapInfo).total_mmaps == MAX_WMMAP_INFO) return FAILED; // null pointer
+
+    // continue if not allocated
+    if(((p->wmapInfo).addr)[i] == 0 && ((p->wmapInfo).length)[i] == -1){
+	  emptySpot = i;
+	  continue;
+    }
+
+	// check if given address is free
+    if(vasIntersect(addr, length, ((p->wmapInfo).addr)[i], ((p->wmapInfo).length)[i])){
+	if(DEBUG) cprintf("Address interfects %d %d %d %d\n", addr, length, ((p->wmapInfo).addr)[i], ((p->wmapInfo).length)[i])    ;
+	  return FAILED;
+	}
+  }
+
+  // update the wmap information
+  if(insertWmap(p, addr, length, 0, emptySpot) != 0) return FAILED;
+
+  if(DEBUG) printWmap(p);
+
+  return addr;
 }
 
 

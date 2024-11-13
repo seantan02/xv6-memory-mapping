@@ -6,7 +6,6 @@
 #include "memlayout.h"
 #include "mmu.h"
 #include "proc.h"
-#include "wmap.h"
 
 int
 sys_fork(void)
@@ -92,6 +91,8 @@ sys_uptime(void)
 }
 
 // task 1 implementation
+extern int DEBUG;
+
 int
 sys_wmap(void)
 {
@@ -105,9 +106,14 @@ sys_wmap(void)
   if(argint(2, &flags) < 0) return -1;
   if(argint(3, &fd) < 0) return -1;
 
+  if(DEBUG) cprintf("Made it before first checks\n");
   // checks
   if((flags & MAP_FIXED) == 0) return -1; // MAP_FIXED not set, error
   if((flags & MAP_SHARED) == 0) return -1; // MAP_SHARE not set, error
-  
+  // if length is not in multiple of page size in bytes
+  if (length % PGSIZE != 0) {
+	return -1;
+  }
+  if(DEBUG) cprintf("Made it after first checks\n");
   return wmap(addr, length, flags, fd);
 }

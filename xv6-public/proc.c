@@ -111,6 +111,13 @@ found:
   p->context = (struct context*)sp;
   memset(p->context, 0, sizeof *p->context);
   p->context->eip = (uint)forkret;
+  // initialize the process wmap
+  p->wmapInfo.total_mmaps = 0;
+  for(int i = 0; i<MAX_WMMAP_INFO; i++){
+	((p->wmapInfo).addr)[i] = 0;
+	((p->wmapInfo).length)[i] = -1;
+    ((p->wmapInfo).n_loaded_pages)[i] = 0;
+  }
 
   return p;
 }

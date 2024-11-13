@@ -77,7 +77,21 @@ trap(struct trapframe *tf)
             cpuid(), tf->cs, tf->eip);
     lapiceoi();
     break;
+  // page fault
+  case T_PGFLT: // T_PGFLT = 14
+	// if page fault addr is part of a mapping
+	//uint fault_addr = rcr2();  // Get the faulting address (from CR2 register)
+    //struct proc *p = myproc();  // Get the current process
 
+    // Check if fault_addr is within a mapped region in the process's wmap mappings
+    //int found_mapping = 0;
+    if(1){ // lazy allocation
+	   cprintf("We made it!\n");
+	}
+	else{
+        cprintf("Segmentation Fault\n");
+        myproc()->killed = 1;
+	}
   //PAGEBREAK: 13
   default:
     if(myproc() == 0 || (tf->cs&3) == 0){
