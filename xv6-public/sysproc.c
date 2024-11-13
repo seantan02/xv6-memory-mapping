@@ -6,6 +6,7 @@
 #include "memlayout.h"
 #include "mmu.h"
 #include "proc.h"
+#include "wmap.h"
 
 int
 sys_fork(void)
@@ -88,4 +89,25 @@ sys_uptime(void)
   xticks = ticks;
   release(&tickslock);
   return xticks;
+}
+
+// task 1 implementation
+int
+sys_wmap(void)
+{
+  uint addr;
+  int length;
+  int flags;
+  int fd;
+
+  if(argint(0, (int *) &addr) < 0) return -1;
+  if(argint(1, &length) < 0) return -1;
+  if(argint(2, &flags) < 0) return -1;
+  if(argint(3, &fd) < 0) return -1;
+
+  // checks
+  if((flags & MAP_FIXED) == 0) return -1; // MAP_FIXED not set, error
+  if((flags & MAP_SHARED) == 0) return -1; // MAP_SHARE not set, error
+  
+  return wmap(addr, length, flags, fd);
 }

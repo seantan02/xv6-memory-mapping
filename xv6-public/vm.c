@@ -6,9 +6,13 @@
 #include "mmu.h"
 #include "proc.h"
 #include "elf.h"
+#include "wmap.h"
 
 extern char data[];  // defined by kernel.ld
 pde_t *kpgdir;  // for use in scheduler()
+
+// global variable to track wmap
+extern struct wmapinfo wmapTable;
 
 // Set up CPU's kernel segment descriptors.
 // Run once on entry on each CPU.
@@ -391,4 +395,21 @@ copyout(pde_t *pgdir, uint va, void *p, uint len)
 // Blank page.
 //PAGEBREAK!
 // Blank page.
+
+
+uint
+wmap(uint addr, int length, int flags, int fd)
+{
+  int ignoreFd = 0;
+  if(flags & MAP_ANONYMOUS) ignoreFd = 1; // ignore fd
+
+  return -1;
+}
+
+
+
+
+
+
+
 
