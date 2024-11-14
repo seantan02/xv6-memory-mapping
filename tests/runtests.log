@@ -1,0 +1,192 @@
+starting build
+
+**********************************************************************
+
+Test build
+build xv6 using make
+
+**********************************************************************
+Trying to build project using make
+make xv6.img fs.img
+make: 'xv6.img' is up to date.
+make: 'fs.img' is up to date.
+
+
+test build PASSED
+ (build xv6 using make)
+
+starting test_1
+
+**********************************************************************
+
+Test test_1
+Checks the presence of all system calls
+
+**********************************************************************
+Running xv6 user progam /home/siong/private/cs537/p5/tests/ctests/test_1.c
+DEBUG: Copying header file to project path
+Trying to build project using make
+make xv6.img fs.img
+/tmp/tmpbkth17ga/p/Makefile
+/tmp/tmpbkth17ga/p/Makefile.test
+make: 'xv6.img' is up to date.
+make: 'fs.img' is up to date.
+make qemu-nox CPUS=1
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o tester.o tester.c
+ld -m    elf_i386 -N -e main -Ttext 0 -o _tester tester.o ulib.o usys.o printf.o umalloc.o
+objdump -S _tester > tester.asm
+objdump -t _tester | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > tester.sym
+./mkfs fs.img README _cat _echo _forktest _grep _init _kill _ln _ls _tester _mkdir _rm _sh _stressfs _usertests _wc _zombie _t12test 
+nmeta 59 (boot, super, log blocks 30 inode blocks 26, bitmap blocks 1) blocks 941 total 1000
+balloc: first 729 blocks have been allocated
+balloc: write bitmap block at sector 58
+qemu-system-i386 -nographic -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp 1 -m 512 
+c[?7l[2J[0mSeaBIOS (version 1.15.0-1)
+
+
+iPXE (https://ipxe.org) 00:03.0 CA00 PCI2.10 PnP PMM+1FF8B4A0+1FECB4A0 CA00
+Press Ctrl-B to configure iPXE (PCI 00:03.0)...                                                                               
+
+
+Booting from Hard Disk..xv6...
+cpu0: starting 0
+sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ tester
+tester
+
+
+TEST_1
+SYS_VA2PA: Made it after argint and proceed va2pa call.
+INFO: va2pa(0x0) returned 0xDEE2000
+INFO: total_mmaps = 0
+Made it before first checks
+INFO: wmap() returned -1
+INFO: wunmap() returned -1
+[0;32mSUCCESS:[0m TEST_1	 PASSED
+
+$ 
+
+test test_1 PASSED (1 of 1)
+ (Checks the presence of all system calls)
+
+starting test_2
+
+**********************************************************************
+
+Test test_2
+Checks the presence of Segmentation Fault
+
+**********************************************************************
+Running xv6 user progam /home/siong/private/cs537/p5/tests/ctests/test_2.c
+DEBUG: Copying header file to project path
+Trying to build project using make
+make xv6.img fs.img
+/tmp/tmpbkth17ga/p/Makefile
+/tmp/tmpbkth17ga/p/Makefile.test
+make: 'xv6.img' is up to date.
+make: 'fs.img' is up to date.
+make qemu-nox CPUS=1
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o tester.o tester.c
+ld -m    elf_i386 -N -e main -Ttext 0 -o _tester tester.o ulib.o usys.o printf.o umalloc.o
+objdump -S _tester > tester.asm
+objdump -t _tester | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > tester.sym
+./mkfs fs.img README _cat _echo _forktest _grep _init _kill _ln _ls _tester _mkdir _rm _sh _stressfs _usertests _wc _zombie _t12test 
+nmeta 59 (boot, super, log blocks 30 inode blocks 26, bitmap blocks 1) blocks 941 total 1000
+balloc: first 727 blocks have been allocated
+balloc: write bitmap block at sector 58
+qemu-system-i386 -nographic -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp 1 -m 512 
+c[?7l[2J[0mSeaBIOS (version 1.15.0-1)
+
+
+iPXE (https://ipxe.org) 00:03.0 CA00 PCI2.10 PnP PMM+1FF8B4A0+1FECB4A0 CA00
+Press Ctrl-B to configure iPXE (PCI 00:03.0)...                                                                               
+
+
+Booting from Hard Disk..xv6...
+cpu0: starting 0
+sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ tester
+tester
+
+
+TEST_2
+looking if we have that address cover : -2147483647
+looking if we have that address cover : -2147483647
+looking if we have that address cover : -2147483647
+looking if we have that address cover : -2147483647
+looking if we have that address cover : -2147483647
+looking if we have that address cover : -2147483647
+looking if we have that address cover : -2147483647
+looking if we have that address cover : -2147483647
+looking if we have that address cover : -2147483647
+looking if we have that address cover : -2147483647
+looking if we have that address cover : -2147483647
+looking if we have that address cover : -2147483647
+looking if we have that address cover : -2147483647
+looking if we have that address cover : -2147483647
+looking if we have that address cover : -2147483647
+looking if we have that address cover : -2147483647
+Segmentation Fault
+$ 
+
+test test_2 PASSED (1 of 1)
+ (Checks the presence of Segmentation Fault)
+
+starting test_3
+
+**********************************************************************
+
+Test test_3
+MAP: Place one fixed anonymous map
+
+**********************************************************************
+Running xv6 user progam /home/siong/private/cs537/p5/tests/ctests/test_3.c
+DEBUG: Copying header file to project path
+Trying to build project using make
+make xv6.img fs.img
+/tmp/tmpbkth17ga/p/Makefile
+/tmp/tmpbkth17ga/p/Makefile.test
+make: 'xv6.img' is up to date.
+make: 'fs.img' is up to date.
+make qemu-nox CPUS=1
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o tester.o tester.c
+ld -m    elf_i386 -N -e main -Ttext 0 -o _tester tester.o ulib.o usys.o printf.o umalloc.o
+objdump -S _tester > tester.asm
+objdump -t _tester | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > tester.sym
+./mkfs fs.img README _cat _echo _forktest _grep _init _kill _ln _ls _tester _mkdir _rm _sh _stressfs _usertests _wc _zombie _t12test 
+nmeta 59 (boot, super, log blocks 30 inode blocks 26, bitmap blocks 1) blocks 941 total 1000
+balloc: first 729 blocks have been allocated
+balloc: write bitmap block at sector 58
+qemu-system-i386 -nographic -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp 1 -m 512 
+c[?7l[2J[0mSeaBIOS (version 1.15.0-1)
+
+
+iPXE (https://ipxe.org) 00:03.0 CA00 PCI2.10 PnP PMM+1FF8B4A0+1FECB4A0 CA00
+Press Ctrl-B to configure iPXE (PCI 00:03.0)...                                                                               
+
+
+Booting from Hard Disk..xv6...
+cpu0: starting 0
+sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ tester
+tester
+
+
+TEST_3
+INFO: Initially 0 maps. 	Okay.
+Made it before first checks
+[0;31mERROR: [0mwmap() returned -1
+
+[0;31mFAIL:[0m TEST_3	 FAILED (pid 3)
+
+$ 
+
+test test_3 FAILED (0 of 1)
+ (MAP: Place one fixed anonymous map)
+ tester failed
+
+Skipped 22 tests.
+To keep testing after failing a test, use flag '-c' or '--continue'

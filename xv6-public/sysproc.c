@@ -101,20 +101,20 @@ sys_wmap(void)
   int flags;
   int fd;
 
-  if(argint(0, (int *) &addr) < 0) return -1;
-  if(argint(1, &length) < 0) return -1;
-  if(argint(2, &flags) < 0) return -1;
-  if(argint(3, &fd) < 0) return -1;
+  if(argint(0, (int *) &addr) < 0) return FAILED;
+  if(argint(1, &length) < 0) return FAILED;
+  if(argint(2, &flags) < 0) return FAILED;
+  if(argint(3, &fd) < 0) return FAILED;
 
   if(DEBUG) cprintf("Made it before first checks\n");
 
   // checks
-  if(addr < 0x60000000 || addr+length > 0x80000000) return -1;
-  if((flags & MAP_FIXED) == 0) return -1; // MAP_FIXED not set, error
-  if((flags & MAP_SHARED) == 0) return -1; // MAP_SHARE not set, error
+  if(addr < 0x60000000 || addr+length > 0x80000000) return FAILED;
+  if((flags & MAP_FIXED) == 0) return FAILED; // MAP_FIXED not set, error
+  if((flags & MAP_SHARED) == 0) return FAILED; // MAP_SHARE not set, error
   // if length is not in multiple of page size in bytes
   if (length % PGSIZE != 0) {
-	return -1;
+	return FAILED;
   }
 
   if(DEBUG) cprintf("Made it after first checks\n");
@@ -126,11 +126,33 @@ sys_wunmap(void)
 {
   uint addr;
 
-  if(argint(0, (int *) &addr) < 0) return -1;
+  if(argint(0, (int *) &addr) < 0) return FAILED;
 
   // checks
-  if(addr < 0x60000000 || addr > 0x80000000) return -1;
+  if(addr < 0x60000000 || addr > 0x80000000) return FAILED;
   if(DEBUG) cprintf("SYS_WUNMAP: Got pass all the checks!\n");
 
   return wunmap(addr);
+}
+
+int
+sys_va2pa(void)
+{
+  uint va;
+
+  if(argint(0, (int *) &va) < 0) return FAILED;
+  if(DEBUG) cprintf("SYS_VA2PA: Made it after argint and proceed va2pa call.\n");
+
+  return va2pa(va);
+}
+
+int
+sys_getwmapinfo(void)
+{
+  struct wmapinfo *wminfo;
+
+  if(argptr(0, (void *)&wminfo, sizeof(struct wmapinfo)) < 0) return FAILED;
+  if(wminfo == 0) return FAILED;
+
+  return getwmapinfo(wminfo);
 }

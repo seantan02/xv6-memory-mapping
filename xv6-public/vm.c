@@ -493,6 +493,10 @@ int allocateAndMap(struct proc *p, uint addr, int length, int i){
   return 0;
 }
 
+/**
+Actual syscall functions are below
+*/
+
 uint
 wmap(uint addr, int length, int flags, int fd)
 {
@@ -524,7 +528,7 @@ wmap(uint addr, int length, int flags, int fd)
 
 	// check if given address is free
     if(vasIntersect(addr, length, ((p->wmapInfo).addr)[i], ((p->wmapInfo).length)[i])){
-	if(DEBUG) cprintf("Address interfects %d %d %d %d\n", addr, length, ((p->wmapInfo).addr)[i], ((p->wmapInfo).length)[i])    ;
+	  if(DEBUG) cprintf("Address interfects %d %d %d %d\n", addr, length, ((p->wmapInfo).addr)[i], ((p->wmapInfo).length)[i]);
 	  return FAILED;
 	}
   }
@@ -567,3 +571,44 @@ This function removes mapping from the process if it exists
 
   return FAILED;
 }
+
+uint
+va2pa(uint va)
+{
+  pte_t *pte;
+  uint pa;
+
+  struct proc *p = myproc();
+
+  pte = walkpgdir(p->pgdir, (char*)va, 0);
+  if(!pte)  // no pte exist
+    return FAILED;
+  else if((*pte & PTE_P) != 0){
+    pa = PTE_ADDR(*pte);
+    if(pa == 0)
+      panic("kfree");
+	return (pa | (va & (PGSIZE-1)));  // concat PFN and Offset
+  }
+  
+  return FAILED;
+}
+
+int
+getwmapinfo(struct wmapinfo *wminfo)
+{
+  struct proc *p = myproc();
+
+  (wminfo->total_mmaps) = ((p->wmapInfo).total_mmaps);
+
+  for(int i=0; i<MAX_WMMAP_INFO; i++){
+	(wminfo->addr)[i] = ((p->wmapInfo).addr)[i];
+	(wminfo->length)[i] = ((p->wmapInfo).length)[i];
+	(wminfo->n_loaded_pages)[i] = ((p->wmapInfo).n_loaded_pages)[i];
+  }
+
+  return 0;
+}
+
+
+
+
