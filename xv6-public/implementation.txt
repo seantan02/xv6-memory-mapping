@@ -4,7 +4,9 @@ Things changed oin 11/12:
 3. Added content of wmap.h
 4. sysproc.c impelementation of wmap should be completed
 
-1. Create wmap.h and add all needed declaration and enumerations
-2. Add syscall uint wmap(uint addr, int length, int flags, int fd);
-3. Create an implementation of it
-4. Now we have to figure out how to keep track of the virtual address range if it's free
+Things to do:
+[x] Create wmap.h and add all needed declaration and enumerations
+[x] Add syscall uint wmap(uint addr, int length, int flags, int fd);
+[x] Create an implementation of it
+[x] Now we have to figure out how to keep track of the virtual address range if it's free
+
