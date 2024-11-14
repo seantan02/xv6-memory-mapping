@@ -423,6 +423,34 @@ void printWmap(struct proc *p){
   }
 }
 
+int allocateAndMap(struct proc *p, uint addr, int length){
+  char *mem;
+  uint endAddr = addr + length; 
+
+  if(endAddr >= KERNBASE)  // over the range
+	return -1;
+ 
+  endAddr = PGROUNDUP(endAddr);
+  for(; addr < endAddr; addr += PGSIZE){
+    mem = kalloc();
+    // we might want to free mem but let's leave this for now
+	if(mem == 0){
+      cprintf("MMAP out of memory\n");
+      return -1;
+	}
+
+    memset(mem, 0, PGSIZE);
+	if(DEBUG) cprintf("Mapping memory for addrss :%d \n", addr);
+    if(mappages(p->pgdir, (char*)addr, PGSIZE, V2P(mem), PTE_W|PTE_U) < 0){
+	  cprintf("MMAP out of memory (2)\n");
+      kfree(mem);
+      return -1;
+    }
+  }
+
+  return 0;
+}
+
 uint
 wmap(uint addr, int length, int flags, int fd)
 {
@@ -466,11 +494,3 @@ wmap(uint addr, int length, int flags, int fd)
 
   return addr;
 }
-
-
-
-
-
-
-
-
