@@ -107,13 +107,30 @@ sys_wmap(void)
   if(argint(3, &fd) < 0) return -1;
 
   if(DEBUG) cprintf("Made it before first checks\n");
+
   // checks
+  if(addr < 0x60000000 || addr+length > 0x80000000) return -1;
   if((flags & MAP_FIXED) == 0) return -1; // MAP_FIXED not set, error
   if((flags & MAP_SHARED) == 0) return -1; // MAP_SHARE not set, error
   // if length is not in multiple of page size in bytes
   if (length % PGSIZE != 0) {
 	return -1;
   }
+
   if(DEBUG) cprintf("Made it after first checks\n");
   return wmap(addr, length, flags, fd);
+}
+
+int
+sys_wunmap(void)
+{
+  uint addr;
+
+  if(argint(0, (int *) &addr) < 0) return -1;
+
+  // checks
+  if(addr < 0x60000000 || addr > 0x80000000) return -1;
+  if(DEBUG) cprintf("SYS_WUNMAP: Got pass all the checks!\n");
+
+  return wunmap(addr);
 }

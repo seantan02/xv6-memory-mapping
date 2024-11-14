@@ -117,6 +117,7 @@ found:
 	((p->wmapInfo).addr)[i] = 0;
 	((p->wmapInfo).length)[i] = -1;
     ((p->wmapInfo).n_loaded_pages)[i] = 0;
+	((p->wmapInfo).file_backed)[i] = 0;
   }
 
   return p;

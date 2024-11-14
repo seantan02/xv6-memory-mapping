@@ -18,8 +18,10 @@ struct wmapinfo {
     int addr[MAX_WMMAP_INFO];           // Starting address of mapping
     int length[MAX_WMMAP_INFO];         // Size of mapping
     int n_loaded_pages[MAX_WMMAP_INFO]; // Number of pages physically loaded into memory
+	int file_backed[MAX_WMMAP_INFO];
 };
 
 // helper functions
-int allocateAndMap(struct proc *p, uint addr, int length);
+int allocateAndMap(struct proc *p, uint addr, int length, int i);
+int dellocateAndUnmap(struct proc *p, uint addr, int length, int i);
 int vasIntersect(uint addr1, int length1, uint addr2, int length2);

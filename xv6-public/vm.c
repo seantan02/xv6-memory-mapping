@@ -402,16 +402,51 @@ int vasIntersect(uint addr1, int length1, uint addr2, int length2){
 }
 extern int DEBUG;
 
-
-int insertWmap(struct proc *p, uint addr, int length, int n_loaded_page, int index){
+int updateWmap(struct proc *p, uint addr, int length, int n_loaded_page, int file_backed, int total_mmaps, int index){
   if(index < 0) return -1;
   if(index >= MAX_WMMAP_INFO) return -1;
 
   ((p->wmapInfo).addr)[index] = addr;
   ((p->wmapInfo).length)[index] = length;
   ((p->wmapInfo).n_loaded_pages)[index] = n_loaded_page;
-  (p->wmapInfo).total_mmaps++;
+  (p->wmapInfo).total_mmaps = total_mmaps;
+  ((p->wmapInfo).file_backed)[index] = file_backed;
 
+  return 0;
+}
+
+int dellocateAndUnmap(struct proc *p, uint addr, int length, int i){
+  if(((p->wmapInfo).file_backed)[i]){
+	// perform write back
+    cprintf("We should perform a write-back here\n");
+  }
+
+  // if there's loaded page, else skip the actual freeing physical page
+  if(((p->wmapInfo).n_loaded_pages)[i] > 0){
+	pte_t *pte;
+	uint a, pa;
+ 
+	a = PGROUNDUP(addr);
+	for(; a < addr+length ; a += PGSIZE){
+      pte = walkpgdir(p->pgdir, (char*)a, 0);
+      if(!pte)
+		a = PGADDR(PDX(a) + 1, 0, 0) - PGSIZE;
+      else if((*pte & PTE_P) != 0){
+		pa = PTE_ADDR(*pte);
+		if(pa == 0)
+          panic("kfree");
+		char *v = P2V(pa);
+		kfree(v);
+		*pte = 0;
+	  }
+	}
+  }
+
+  // done removing pages and so we update the wmap
+  if(updateWmap(p, 0, -1, 0, 0, (p->wmapInfo).total_mmaps-1, i) != 0)
+	return -1;
+
+  // no error
   return 0;
 }
 
@@ -423,9 +458,10 @@ void printWmap(struct proc *p){
   }
 }
 
-int allocateAndMap(struct proc *p, uint addr, int length){
+int allocateAndMap(struct proc *p, uint addr, int length, int i){
   char *mem;
   uint endAddr = addr + length; 
+  int pagesAdded = 0;
 
   if(endAddr >= KERNBASE)  // over the range
 	return -1;
@@ -436,6 +472,7 @@ int allocateAndMap(struct proc *p, uint addr, int length){
     // we might want to free mem but let's leave this for now
 	if(mem == 0){
       cprintf("MMAP out of memory\n");
+	  dellocateAndUnmap(p, addr+length, addr, i); // deallocate
       return -1;
 	}
 
@@ -446,7 +483,12 @@ int allocateAndMap(struct proc *p, uint addr, int length){
       kfree(mem);
       return -1;
     }
+    pagesAdded++;
   }
+
+  // update the wmap info for the process to increment the n_loaded_pages by 1
+  if(updateWmap(p, ((p->wmapInfo).addr)[i], ((p->wmapInfo).length)[i], ((p->wmapInfo).n_loaded_pages)[i]+pagesAdded, ((p->wmapInfo).file_backed)[i], (p->wmapInfo).total_mmaps, i) != 0)
+	return -1;
 
   return 0;
 }
@@ -460,9 +502,9 @@ wmap(uint addr, int length, int flags, int fd)
 	2. MAP_FIXED is always set to true, always only find virtual address EXACTLY AT addr
   */
 
-  int ignoreFd = 0;
-  if(flags & MAP_ANONYMOUS) ignoreFd = 1; // ignore fd
-  if(DEBUG) cprintf("Ignored fd: %d\n", ignoreFd);
+  int fileBacked = 1;
+  if(flags & MAP_ANONYMOUS) fileBacked = 0; // ignore fd
+  if(DEBUG) cprintf("fbacked: %d\n", fileBacked);
   // now we retrive our process and check if the process have already used the virtual address range
   struct proc *p = myproc();
   int emptySpot = -1;
@@ -488,9 +530,40 @@ wmap(uint addr, int length, int flags, int fd)
   }
 
   // update the wmap information
-  if(insertWmap(p, addr, length, 0, emptySpot) != 0) return FAILED;
+  if(updateWmap(p, addr, length, 0, fileBacked, (p->wmapInfo).total_mmaps+1, emptySpot) != 0) return FAILED;
 
   if(DEBUG) printWmap(p);
 
   return addr;
+}
+
+int
+wunmap(uint addr)
+{
+/*
+This function removes mapping from the process if it exists
+*/
+
+  struct proc *p = myproc();
+
+  // if nothing is mapped then we are done
+  if((p->wmapInfo).total_mmaps == 0) return SUCCESS;  
+
+  for(int i = 0; i < MAX_WMMAP_INFO; i++){
+    // continue if not allocated
+    if(((p->wmapInfo).addr)[i] == 0 && ((p->wmapInfo).length)[i] == -1){
+	  continue;
+    }
+ 
+    // check if given address is free
+	if(((p->wmapInfo).addr)[i] == addr){
+	  if(dellocateAndUnmap(p, addr, ((p->wmapInfo).length)[i], i) != 0){
+		if(DEBUG) cprintf("Failed because dellocateAndUnmap failed!\n");
+		return FAILED;
+	  }
+	  return SUCCESS;
+	}
+  }
+
+  return FAILED;
 }

@@ -7,7 +7,7 @@
 int main() {
     int length = PAGE_SIZE;  // Map one page of memory for each wmap call
     uint addr;
-    uint nextMapAddr = 0;
+    uint nextMapAddr = 0x60000000;
     int i;
 
     // 1. Attempt to create 16 mappings
@@ -31,7 +31,7 @@ int main() {
         printf(1, "17th wmap call correctly failed as expected\n");
     } else {
         printf(1, "17th wmap call unexpectedly succeeded at address: 0x%x\n", addr);
-		//wunmap(addr, length); // Clean up if this unexpectedly succeeds
+		wunmap(addr); // Clean up if this unexpectedly succeeds
     }
 
     char *mapped_memory = (char *)addr;
@@ -45,12 +45,16 @@ int main() {
         printf(1, "Data verification failed!\n");
     }
 
-    /*// 4. Unmap all mappings (only necessary if tracking and unmapping each addr)
-    for (i = 0; i < 16; i++) {
-        wunmap(addr + i * PAGE_SIZE, length);
+    // 4. Unmap all mappings (only necessary if tracking and unmapping each addr)
+    addr = 0x60000000;
+	for (i = 0; i < 16; i++) {
+        if(wunmap(addr + i * PAGE_SIZE) != 0){
+		  printf(1, "Unmapping failed!\n");
+		  exit();
+		}
     }
     printf(1, "All mappings successfully unmapped\n");
-	*/
+	
 
     exit();
 }
