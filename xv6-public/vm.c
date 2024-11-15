@@ -6,9 +6,16 @@
 #include "mmu.h"
 #include "proc.h"
 #include "elf.h"
+#include "spinlock.h"
+#include "sleeplock.h"
+#include "fs.h"
+#include "file.h"
 
 extern char data[];  // defined by kernel.ld
 pde_t *kpgdir;  // for use in scheduler()
+
+// fileseek and fileread
+extern int fileread(struct file *f, char *addr, int n);
 
 // Set up CPU's kernel segment descriptors.
 // Run once on entry on each CPU.
@@ -402,7 +409,8 @@ int vasIntersect(uint addr1, int length1, uint addr2, int length2){
 }
 extern int DEBUG;
 
-int updateWmap(struct proc *p, uint addr, int length, int n_loaded_page, int file_backed, int total_mmaps, int index){
+int updateWmap(struct proc *p, uint addr, int length, int n_loaded_page,
+			   int file_backed, int fd, int total_mmaps, int index){
   if(index < 0) return -1;
   if(index >= MAX_WMMAP_INFO) return -1;
 
@@ -443,7 +451,7 @@ int dellocateAndUnmap(struct proc *p, uint addr, int length, int i){
   }
 
   // done removing pages and so we update the wmap
-  if(updateWmap(p, 0, -1, 0, 0, (p->wmapInfo).total_mmaps-1, i) != 0)
+  if(updateWmap(p, 0, -1, 0, 0, -1, (p->wmapInfo).total_mmaps-1, i) != 0)
 	return -1;
 
   // no error
@@ -458,27 +466,45 @@ void printWmap(struct proc *p){
   }
 }
 
+/**
+This function allocate and map a physical page to the given addr with length, if valid.
+If it's file backed, it read from the file into the memory with offset calculated from addr
+*/
 int allocateAndMap(struct proc *p, uint addr, int length, int i){
+  // we assume length is PGSIZE and so PGROUNDUP should not do anything
+  struct file *f;
   char *mem;
-  uint endAddr = addr + length; 
+  uint a = PGROUNDDOWN(addr);
+  uint endAddr = a + length; 
   int pagesAdded = 0;
 
   if(endAddr >= KERNBASE)  // over the range
 	return -1;
  
   endAddr = PGROUNDUP(endAddr);
-  for(; addr < endAddr; addr += PGSIZE){
+  if(DEBUG) cprintf("AllocateAndMap: Start addr: %d, end addr :%d\n", addr, endAddr);
+  for(; a < endAddr; a += PGSIZE){
     mem = kalloc();
     // we might want to free mem but let's leave this for now
 	if(mem == 0){
       cprintf("MMAP out of memory\n");
-	  dellocateAndUnmap(p, addr+length, addr, i); // deallocate
+	  dellocateAndUnmap(p, endAddr, a, i); // deallocate
       return -1;
 	}
 
+	// set memory allocated to all 0s
     memset(mem, 0, PGSIZE);
-	if(DEBUG) cprintf("Mapping memory for addrss :%d \n", addr);
-    if(mappages(p->pgdir, (char*)addr, PGSIZE, V2P(mem), PTE_W|PTE_U) < 0){
+	if(DEBUG) cprintf("Mapping memory for addrss :%d \n", a);
+	// now we check if this mapping is file_backed
+	if(((p->wmapInfoExtra).file_backed)[i]){
+	  int offset = (addr - ((p->wmapInfo).addr)[i]);
+	  if((f=myproc()->ofile[((p->wmapInfoExtra).fd)[i]]) == 0) return FAILED;
+	  f->off = offset;
+
+	  fileread(f, mem, PGSIZE);
+	}
+
+    if(mappages(p->pgdir, (char*)a, PGSIZE, V2P(mem), PTE_W|PTE_U) < 0){
 	  cprintf("MMAP out of memory (2)\n");
       kfree(mem);
       return -1;
@@ -487,7 +513,8 @@ int allocateAndMap(struct proc *p, uint addr, int length, int i){
   }
 
   // update the wmap info for the process to increment the n_loaded_pages by 1
-  if(updateWmap(p, ((p->wmapInfo).addr)[i], ((p->wmapInfo).length)[i], ((p->wmapInfo).n_loaded_pages)[i]+pagesAdded, ((p->wmapInfoExtra).file_backed)[i], (p->wmapInfo).total_mmaps, i) != 0)
+  if(updateWmap(p, ((p->wmapInfo).addr)[i], ((p->wmapInfo).length)[i], ((p->wmapInfo).n_loaded_pages)[i]+pagesAdded,
+				((p->wmapInfoExtra).file_backed)[i], ((p->wmapInfoExtra).fd)[i], (p->wmapInfo).total_mmaps, i) != 0)
 	return -1;
 
   return 0;
@@ -534,7 +561,7 @@ wmap(uint addr, int length, int flags, int fd)
   }
 
   // update the wmap information
-  if(updateWmap(p, addr, length, 0, fileBacked, (p->wmapInfo).total_mmaps+1, emptySpot) != 0) return FAILED;
+  if(updateWmap(p, addr, length, 0, fileBacked, fd, (p->wmapInfo).total_mmaps+1, emptySpot) != 0) return FAILED;
 
   if(DEBUG) printWmap(p);
 

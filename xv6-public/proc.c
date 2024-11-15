@@ -118,6 +118,7 @@ found:
 	((p->wmapInfo).length)[i] = -1;
     ((p->wmapInfo).n_loaded_pages)[i] = 0;
 	((p->wmapInfoExtra).file_backed)[i] = 0;
+	((p->wmapInfoExtra).fd)[i] = -1;
   }
 
   return p;

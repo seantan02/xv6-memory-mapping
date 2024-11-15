@@ -23,11 +23,12 @@ struct wmapinfo {
 // custom struct to keep track of stuff
 struct wmapinfoExtra{
 	int file_backed[MAX_WMMAP_INFO];
+	int fd[MAX_WMMAP_INFO];
 };
 
 // helper functions
 int vasIntersect(uint addr1, int length1, uint addr2, int length2);
-int updateWmap(struct proc *p, uint addr, int length, int n_loaded_page, int file_backed, int total_mmaps, int index);
+int updateWmap(struct proc *p, uint addr, int length, int n_loaded_page, int file_backed, int fd, int total_mmaps, int index);
 int dellocateAndUnmap(struct proc *p, uint addr, int length, int i);
 void printWmap(struct proc *p);
 int allocateAndMap(struct proc *p, uint addr, int length, int i);
