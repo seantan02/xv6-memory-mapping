@@ -20,7 +20,7 @@ int main() {
     if (map != addr) {
         printerr("wmap() returned %d\n", (int)map);
         failed();
-    }
+	}
     struct wmapinfo winfo;
     get_n_validate_wmap_info(&winfo, 1);   // 1 map exists
     map_exists(&winfo, map, length, TRUE); // the map exists

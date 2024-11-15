@@ -52,6 +52,7 @@ struct proc {
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
   struct wmapinfo wmapInfo;	   // WMAP information per process
+  struct wmapinfoExtra wmapInfoExtra;  // Extra WMAP info to use
 };
 
 // Process memory is laid out contiguously, low addresses first:
