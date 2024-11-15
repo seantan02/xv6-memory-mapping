@@ -112,8 +112,13 @@ sys_wmap(void)
   if(addr < 0x60000000 || addr+length > 0x80000000) return FAILED;
   if((flags & MAP_FIXED) == 0) return FAILED; // MAP_FIXED not set, error
   if((flags & MAP_SHARED) == 0) return FAILED; // MAP_SHARE not set, error
-  // if length is not in multiple of page size in bytes
-  if (length % PGSIZE != 0) {
+  // if addr is not multiple of page size
+  if(addr % PGSIZE != 0){
+	return FAILED;
+  }
+
+  // if length is not greater than 0
+  if (length <= 0) {
 	return FAILED;
   }
 

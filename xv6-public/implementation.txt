@@ -9,6 +9,8 @@ Things changed on 11/13:
 2. implemented helper functions in vm.c, including removing insertWmap and creating updateWmap which basically is enough for both insert and delete
 3. implemented both wmap and wunmap
 4. added file_backed field to wmap.h struct
+5. make changes to wmap syscall in sysproc.c to make sure addr is page aligned and legnth is > 0
+6. 6 tests passed (Failed at 7th)
 
 Things to do:
 [x] Create wmap.h and add all needed declaration and enumerations
@@ -16,4 +18,6 @@ Things to do:
 [x] Create an implementation of it
 [x] Now we have to figure out how to keep track of the virtual address range if it's free
 [x] Implement basic wunmap without write-back
-[ ] Implement wmapinfo and va2pa to run tests and see if it passes some tests
+[x] Implement wmapinfo and va2pa to run tests and see if it passes some tests
+[ ] Implement the file backed feature for wmap
+[ ] Implement the write-back feature for wunmap

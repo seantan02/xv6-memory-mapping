@@ -410,13 +410,13 @@ int updateWmap(struct proc *p, uint addr, int length, int n_loaded_page, int fil
   ((p->wmapInfo).length)[index] = length;
   ((p->wmapInfo).n_loaded_pages)[index] = n_loaded_page;
   (p->wmapInfo).total_mmaps = total_mmaps;
-  ((p->wmapInfo).file_backed)[index] = file_backed;
+  ((p->wmapInfoExtra).file_backed)[index] = file_backed;
 
   return 0;
 }
 
 int dellocateAndUnmap(struct proc *p, uint addr, int length, int i){
-  if(((p->wmapInfo).file_backed)[i]){
+  if(((p->wmapInfoExtra).file_backed)[i]){
 	// perform write back
     cprintf("We should perform a write-back here\n");
   }
@@ -487,7 +487,7 @@ int allocateAndMap(struct proc *p, uint addr, int length, int i){
   }
 
   // update the wmap info for the process to increment the n_loaded_pages by 1
-  if(updateWmap(p, ((p->wmapInfo).addr)[i], ((p->wmapInfo).length)[i], ((p->wmapInfo).n_loaded_pages)[i]+pagesAdded, ((p->wmapInfo).file_backed)[i], (p->wmapInfo).total_mmaps, i) != 0)
+  if(updateWmap(p, ((p->wmapInfo).addr)[i], ((p->wmapInfo).length)[i], ((p->wmapInfo).n_loaded_pages)[i]+pagesAdded, ((p->wmapInfoExtra).file_backed)[i], (p->wmapInfo).total_mmaps, i) != 0)
 	return -1;
 
   return 0;
@@ -508,13 +508,13 @@ wmap(uint addr, int length, int flags, int fd)
 
   int fileBacked = 1;
   if(flags & MAP_ANONYMOUS) fileBacked = 0; // ignore fd
-  if(DEBUG) cprintf("fbacked: %d\n", fileBacked);
+  if(DEBUG) cprintf("WMAP: fbacked: %d\n", fileBacked);
   // now we retrive our process and check if the process have already used the virtual address range
   struct proc *p = myproc();
   int emptySpot = -1;
 
   // loop through the process wmap to check if the given addr and length are valid
-  if(DEBUG) cprintf("Made it after first checks\n");
+  if(DEBUG) cprintf("WMAP: Made it after first checks\n");
   // loop through the process wmap to check if the given addr and length are valid
   for(int i = 0; i < MAX_WMMAP_INFO; i++){
 	// check if it is full
@@ -522,13 +522,13 @@ wmap(uint addr, int length, int flags, int fd)
 
     // continue if not allocated
     if(((p->wmapInfo).addr)[i] == 0 && ((p->wmapInfo).length)[i] == -1){
-	  emptySpot = i;
+	  if(emptySpot == -1) emptySpot = i;
 	  continue;
     }
 
 	// check if given address is free
     if(vasIntersect(addr, length, ((p->wmapInfo).addr)[i], ((p->wmapInfo).length)[i])){
-	  if(DEBUG) cprintf("Address interfects %d %d %d %d\n", addr, length, ((p->wmapInfo).addr)[i], ((p->wmapInfo).length)[i]);
+	  if(DEBUG) cprintf("WMAP: Address intersects %d %d %d %d\n", addr, length, ((p->wmapInfo).addr)[i], ((p->wmapInfo).length)[i]);
 	  return FAILED;
 	}
   }
@@ -606,7 +606,7 @@ getwmapinfo(struct wmapinfo *wminfo)
 	(wminfo->n_loaded_pages)[i] = ((p->wmapInfo).n_loaded_pages)[i];
   }
 
-  return 0;
+  return SUCCESS;
 }
 
 
