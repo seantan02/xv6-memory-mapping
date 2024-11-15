@@ -12,6 +12,13 @@ Things changed on 11/13:
 5. make changes to wmap syscall in sysproc.c to make sure addr is page aligned and legnth is > 0
 6. 6 tests passed (Failed at 7th)
 
+Things changed on 11/14:
+1. wmap.h now contains 2 struct to persist the original given struct (wmapextra added)
+2. all fucntions realted to wmapinfo changes are updated
+3. wmap now save fd if it's not ignored
+4. allocateAndMap now round down the given addr instead of rounding up end of addr (according to piazza)
+5. allocateAndMap now reads from file if the given address is file backed
+
 Things to do:
 [x] Create wmap.h and add all needed declaration and enumerations
 [x] Add syscall uint wmap(uint addr, int length, int flags, int fd);
@@ -19,5 +26,5 @@ Things to do:
 [x] Now we have to figure out how to keep track of the virtual address range if it's free
 [x] Implement basic wunmap without write-back
 [x] Implement wmapinfo and va2pa to run tests and see if it passes some tests
-[ ] Implement the file backed feature for wmap
+[x] Implement the file backed feature for wmap
 [ ] Implement the write-back feature for wunmap
