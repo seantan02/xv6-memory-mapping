@@ -401,12 +401,23 @@ copyout(pde_t *pgdir, uint va, void *p, uint len)
 
 // helper function to check if 2 virtual address each with a length intersect
 // return 0 if no intersection, 1 if they intersect;
-int vasIntersect(uint addr1, int length1, uint addr2, int length2){
+/*int vasIntersect(uint addr1, int length1, uint addr2, int length2){
   if(addr1 == addr2 && length1 > 0 && length2 > 0) return 1;
   if(addr1 < addr2 && (addr1 + length1) > addr2) return 1;
   if(addr1 > addr2 && addr1 < (addr2 + length2)) return 1;
   return 0;
+}*/
+int vasIntersect(uint addr1, int length1, uint addr2, int length2) {
+    // Early return if either length is non-positive
+    if (length1 <= 0 || length2 <= 0) return 0;
+    // No intersection if addr1's end is before addr2's start, or addr2's end is before addr1's start
+    if (addr1 + length1 <= addr2 || addr2 + length2 <= addr1) {
+        return 0;
+    }
+    // Otherwise, ranges intersect
+    return 1;
 }
+
 extern int DEBUG;
 
 int updateWmap(struct proc *p, uint addr, int length, int n_loaded_page,
@@ -419,6 +430,7 @@ int updateWmap(struct proc *p, uint addr, int length, int n_loaded_page,
   ((p->wmapInfo).n_loaded_pages)[index] = n_loaded_page;
   (p->wmapInfo).total_mmaps = total_mmaps;
   ((p->wmapInfoExtra).file_backed)[index] = file_backed;
+  ((p->wmapInfoExtra).fd)[index] = fd;
 
   return 0;
 }
@@ -461,9 +473,36 @@ int dellocateAndUnmap(struct proc *p, uint addr, int length, int i){
 void printWmap(struct proc *p){
   for(int i=0; i<MAX_WMMAP_INFO; i++){
 	cprintf("For index %d\n", i);
-	cprintf("Addr is %d, length is %d, n_loaded_pages is %d, total mmap is %d\n", ((p->wmapInfo).addr)[i],
-	((p->wmapInfo).length)[i], ((p->wmapInfo).n_loaded_pages)[i], (p->wmapInfo).total_mmaps);
+	cprintf("Addr is %d, length is %d, n_loaded_pages is %d, total mmap is %d, file_backed: %d, fd: %d\n", ((p->wmapInfo).addr)[i],
+	((p->wmapInfo).length)[i], ((p->wmapInfo).n_loaded_pages)[i], (p->wmapInfo).total_mmaps, ((p->wmapInfoExtra).file_backed)[i],
+	((p->wmapInfoExtra).fd)[i]);
   }
+}
+
+// duplicate file descriptor
+// Duplicate the file descriptor
+int
+duplicateFd(int fd)
+{
+  struct proc *curproc = myproc();
+  struct file *f;
+  int newfd;
+  
+  // Validate the original fd
+  if(fd < 0 || fd >= NOFILE || (f = curproc->ofile[fd]) == 0)
+    return -1;
+    
+  // Find the lowest-numbered free fd
+  for(newfd = 0; newfd < NOFILE; newfd++){
+    if(curproc->ofile[newfd] == 0){
+      // Found free fd slot - use filedup to increment ref count
+      curproc->ofile[newfd] = f;
+      filedup(f);
+      return newfd;
+    }
+  }
+  
+  return -1;  // No free fd found
 }
 
 /**
@@ -476,12 +515,10 @@ int allocateAndMap(struct proc *p, uint addr, int length, int i){
   char *mem;
   uint a = PGROUNDDOWN(addr);
   uint endAddr = a + length; 
-  int pagesAdded = 0;
 
   if(endAddr >= KERNBASE)  // over the range
 	return -1;
  
-  endAddr = PGROUNDUP(endAddr);
   if(DEBUG) cprintf("AllocateAndMap: Start addr: %d, end addr :%d\n", addr, endAddr);
   for(; a < endAddr; a += PGSIZE){
     mem = kalloc();
@@ -489,7 +526,7 @@ int allocateAndMap(struct proc *p, uint addr, int length, int i){
 	if(mem == 0){
       cprintf("MMAP out of memory\n");
 	  dellocateAndUnmap(p, endAddr, a, i); // deallocate
-      return -1;
+      return FAILED;
 	}
 
 	// set memory allocated to all 0s
@@ -497,27 +534,37 @@ int allocateAndMap(struct proc *p, uint addr, int length, int i){
 	if(DEBUG) cprintf("Mapping memory for addrss :%d \n", a);
 	// now we check if this mapping is file_backed
 	if(((p->wmapInfoExtra).file_backed)[i]){
-	  int offset = (addr - ((p->wmapInfo).addr)[i]);
-	  if((f=myproc()->ofile[((p->wmapInfoExtra).fd)[i]]) == 0) return FAILED;
+	  int offset = (a - ((p->wmapInfo).addr)[i]);
+	  f = myproc()->ofile[((p->wmapInfoExtra).fd)[i]];
+	  if(f == 0){
+		if(DEBUG) cprintf("AllocateAndMap: File from descriptor is null\n");
+		return FAILED;
+	  }
+	  // this is another way for reading file with offset
+/*	  // obtain inode and use offset
+	  ilock(f->ip);
+	  if(readi(f->ip, mem, offset, PGSIZE) == 0) return FAILED;
+	  iunlock(f->ip);
+*/
 	  f->off = offset;
-
-	  fileread(f, mem, PGSIZE);
+	  if(fileread(f, mem, PGSIZE) < 0){
+		return FAILED;
+	  }
 	}
 
     if(mappages(p->pgdir, (char*)a, PGSIZE, V2P(mem), PTE_W|PTE_U) < 0){
 	  cprintf("MMAP out of memory (2)\n");
       kfree(mem);
-      return -1;
+	  dellocateAndUnmap(p, endAddr, a, i); // deallocate
+	  return FAILED;
     }
-    pagesAdded++;
+
+	if(updateWmap(p, ((p->wmapInfo).addr)[i], ((p->wmapInfo).length)[i], ((p->wmapInfo).n_loaded_pages)[i]+1,
+				  ((p->wmapInfoExtra).file_backed)[i], ((p->wmapInfoExtra).fd)[i], (p->wmapInfo).total_mmaps, i) != 0)
+	  return FAILED;
   }
 
-  // update the wmap info for the process to increment the n_loaded_pages by 1
-  if(updateWmap(p, ((p->wmapInfo).addr)[i], ((p->wmapInfo).length)[i], ((p->wmapInfo).n_loaded_pages)[i]+pagesAdded,
-				((p->wmapInfoExtra).file_backed)[i], ((p->wmapInfoExtra).fd)[i], (p->wmapInfo).total_mmaps, i) != 0)
-	return -1;
-
-  return 0;
+  return SUCCESS;
 }
 
 /**
@@ -540,6 +587,10 @@ wmap(uint addr, int length, int flags, int fd)
   struct proc *p = myproc();
   int emptySpot = -1;
 
+  // duplicate fd
+  int fdToStore = -1;
+  if(fd >= 0) fdToStore = duplicateFd(fd);
+
   // loop through the process wmap to check if the given addr and length are valid
   if(DEBUG) cprintf("WMAP: Made it after first checks\n");
   // loop through the process wmap to check if the given addr and length are valid
@@ -560,8 +611,10 @@ wmap(uint addr, int length, int flags, int fd)
 	}
   }
 
+  if(emptySpot == -1) return FAILED; // no empty spot found
+  if(DEBUG) cprintf("WMAP: Updating wmap at index %d with addr %d, file_backed %d, fd %d\n", emptySpot, addr, fileBacked, fdToStore);
   // update the wmap information
-  if(updateWmap(p, addr, length, 0, fileBacked, fd, (p->wmapInfo).total_mmaps+1, emptySpot) != 0) return FAILED;
+  if(updateWmap(p, addr, length, 0, fileBacked, fdToStore, (p->wmapInfo).total_mmaps+1, emptySpot) != 0) return FAILED;
 
   if(DEBUG) printWmap(p);
 
