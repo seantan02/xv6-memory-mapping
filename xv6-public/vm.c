@@ -435,41 +435,6 @@ int updateWmap(struct proc *p, uint addr, int length, int n_loaded_page,
   return 0;
 }
 
-int dellocateAndUnmap(struct proc *p, uint addr, int length, int i){
-  if(((p->wmapInfoExtra).file_backed)[i]){
-	// perform write back
-    cprintf("We should perform a write-back here\n");
-  }
-
-  // if there's loaded page, else skip the actual freeing physical page
-  if(((p->wmapInfo).n_loaded_pages)[i] > 0){
-	pte_t *pte;
-	uint a, pa;
- 
-	a = PGROUNDUP(addr);
-	for(; a < addr+length ; a += PGSIZE){
-      pte = walkpgdir(p->pgdir, (char*)a, 0);
-      if(!pte)
-		a = PGADDR(PDX(a) + 1, 0, 0) - PGSIZE;
-      else if((*pte & PTE_P) != 0){
-		pa = PTE_ADDR(*pte);
-		if(pa == 0)
-          panic("kfree");
-		char *v = P2V(pa);
-		kfree(v);
-		*pte = 0;
-	  }
-	}
-  }
-
-  // done removing pages and so we update the wmap
-  if(updateWmap(p, 0, -1, 0, 0, -1, (p->wmapInfo).total_mmaps-1, i) != 0)
-	return -1;
-
-  // no error
-  return 0;
-}
-
 void printWmap(struct proc *p){
   for(int i=0; i<MAX_WMMAP_INFO; i++){
 	cprintf("For index %d\n", i);
@@ -566,6 +531,52 @@ int allocateAndMap(struct proc *p, uint addr, int length, int i){
 
   return SUCCESS;
 }
+
+/**
+This function dellocate physical page for a process mapping and remove it. If MAP_SHARED is set, it writes the content back to file.
+*/
+ int dellocateAndUnmap(struct proc *p, uint addr, int length, int i){
+   // if there's loaded page, else skip the actual freeing physical page
+  if(((p->wmapInfo).n_loaded_pages)[i] > 0){
+    pte_t *pte;
+    uint a, pa;
+	struct file *f;
+
+    a = addr;  // No PGROUNDUP is used because we assume addr is page-aligned and at a starting address of a mapping
+    for(; a < addr+length ; a += PGSIZE){
+	  pte = walkpgdir(p->pgdir, (char*)a, 0);
+      if(!pte)
+		a = PGADDR(PDX(a) + 1, 0, 0) - PGSIZE;
+      else if((*pte & PTE_P) != 0){
+        pa = PTE_ADDR(*pte);
+        if(pa == 0)
+          panic("kfree");
+        char *v = P2V(pa);
+
+		// write to file if it's file_backed
+		if(((p->wmapInfoExtra).file_backed)[i]){
+		  f = p->ofile[((p->wmapInfoExtra).fd)[i]];	
+		  if(f == 0) return FAILED;
+		  int offset = (a - ((p->wmapInfo).addr)[i]);
+		  // write a page
+		  f->off = offset;
+		  if(filewrite(f, v, PGSIZE) < 0) return FAILED;
+		}
+
+        kfree(v);
+        *pte = 0;
+      }
+    }
+  }
+ 
+   // done removing pages and so we update the wmap
+   if(updateWmap(p, 0, -1, 0, 0, -1, (p->wmapInfo).total_mmaps-1, i) != 0)
+     return FAILED;
+ 
+   // no error
+   return SUCCESS;
+ }
+
 
 /**
 Actual syscall functions are below
