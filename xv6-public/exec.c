@@ -55,10 +55,11 @@ exec(char *path, char **argv)
     if(ph.vaddr % PGSIZE != 0)
       goto bad;
 
-	if (ph.flags & PTE_P) perm_flags |= PTE_P;
+	perm_flags = 0;
+	perm_flags |= PTE_P;
+	perm_flags |= PTE_U;
 	if (ph.flags & PTE_W) perm_flags |= PTE_W;
-	if (ph.flags & PTE_U) perm_flags |= PTE_U;
-    
+  
 	if(loaduvm(pgdir, (char*)ph.vaddr, ip, ph.off, ph.filesz, perm_flags) < 0)
       goto bad;
   }

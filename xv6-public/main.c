@@ -12,7 +12,7 @@ extern pde_t *kpgdir;
 extern char end[]; // first address after kernel loaded from ELF file
 
 // used for debugging
-int DEBUG = 0;
+int DEBUG = 1;
 
 // Bootstrap processor starts running C code here.
 // Allocate a real stack and switch to it, first

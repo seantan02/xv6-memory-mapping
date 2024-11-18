@@ -50,6 +50,37 @@ trap(struct trapframe *tf)
   }
 
   switch(tf->trapno){
+  // page fault 
+  case T_PGFLT: // T_PGFLT = 14
+	uint fault_addr = rcr2();  // Get the faulting address (from CR2 register)
+	struct proc *p = myproc();  // Get the current process
+	// Check if fault_addr is within a mapped region in the process's wmap mappings
+	int found_mapping = 0;
+	int index = -1;
+
+	// loop through to see if we have mapping that covers the address
+	for(int i=0; i<MAX_WMMAP_INFO; i++){
+	  if(DEBUG) cprintf("looking if we have that address cover : %d\n", fault_addr);
+	  if(((p->wmapInfo).addr)[i] == 0 && ((p->wmapInfo).length)[i] == -1) continue; // skip if the mapping we looking at is invalid
+	  if(vasIntersect(fault_addr, 1, ((p->wmapInfo).addr)[i], ((p->wmapInfo).length)[i])){
+		index = i;
+		found_mapping = 1;
+		break;
+	  }
+	}
+
+	if(found_mapping){ // lazy allocation
+	  if(allocateAndMap(p, fault_addr, PGSIZE, index) != 0){
+		cprintf("Allocating and mapping failed\n");
+		myproc()->killed = 1;
+	  }
+	}else{
+	  cprintf("Segmentation Fault\n");
+	  myproc()->killed = 1;
+	}
+	
+	break;
+
   case T_IRQ0 + IRQ_TIMER:
     if(cpuid() == 0){
       acquire(&tickslock);
@@ -80,37 +111,6 @@ trap(struct trapframe *tf)
             cpuid(), tf->cs, tf->eip);
     lapiceoi();
     break;
-  // page fault
-  case T_PGFLT: // T_PGFLT = 14
-	// if page fault addr is part of a mapping
-	uint fault_addr = rcr2();  // Get the faulting address (from CR2 register)
-    struct proc *p = myproc();  // Get the current process
-
-    // Check if fault_addr is within a mapped region in the process's wmap mappings
-    int found_mapping = 0;
-	int index = -1;
-	// loop through to see if we have mapping that covers the address    
-	for(int i=0; i<MAX_WMMAP_INFO; i++){
-	  if(DEBUG) cprintf("looking if we have that address cover : %d\n", fault_addr);
-	  if(((p->wmapInfo).addr)[i] == 0 && ((p->wmapInfo).length)[i] == -1) continue; // skip if the mapping we looking at is invalid
-	  if(vasIntersect(fault_addr, 1, ((p->wmapInfo).addr)[i], ((p->wmapInfo).length)[i])){
-		index = i;
-		found_mapping = 1;
-		break;
-	  }
-	}
-
-	if(found_mapping){ // lazy allocation
-	  if(allocateAndMap(p, fault_addr, PGSIZE, index) != 0){
-		cprintf("Allocating and mapping failed\n");
-		myproc()->killed = 1;
-	  }
-	}
-	else{
-        cprintf("Segmentation Fault\n");
-        myproc()->killed = 1;
-	}
-	break;
   //PAGEBREAK: 13
   default:
     if(myproc() == 0 || (tf->cs&3) == 0){
