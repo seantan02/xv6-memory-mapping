@@ -222,7 +222,9 @@ loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz, uint f
     if(readi(ip, P2V(pa), offset+i, n) != n)
       return -1;
 
-	*pte = pa | flags | PTE_P;  
+	*pte &= ~PTE_W;
+	if(flags & PTE_W)
+	  *pte |= PTE_W;  
   }
   return 0;
 }
