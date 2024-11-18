@@ -13,6 +13,7 @@ exec(char *path, char **argv)
   char *s, *last;
   int i, off;
   uint argc, sz, sp, ustack[3+MAXARG+1];
+  uint perm_flags = 0;
   struct elfhdr elf;
   struct inode *ip;
   struct proghdr ph;
@@ -53,7 +54,12 @@ exec(char *path, char **argv)
       goto bad;
     if(ph.vaddr % PGSIZE != 0)
       goto bad;
-    if(loaduvm(pgdir, (char*)ph.vaddr, ip, ph.off, ph.filesz) < 0)
+
+	if (ph.flags & PTE_P) perm_flags |= PTE_P;
+	if (ph.flags & PTE_W) perm_flags |= PTE_W;
+	if (ph.flags & PTE_U) perm_flags |= PTE_U;
+    
+	if(loaduvm(pgdir, (char*)ph.vaddr, ip, ph.off, ph.filesz, perm_flags) < 0)
       goto bad;
   }
   iunlockput(ip);

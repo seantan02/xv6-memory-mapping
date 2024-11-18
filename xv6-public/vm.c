@@ -202,13 +202,16 @@ inituvm(pde_t *pgdir, char *init, uint sz)
 // Load a program segment into pgdir.  addr must be page-aligned
 // and the pages from addr to addr+sz must already be mapped.
 int
-loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
+loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz, uint flags)
 {
+  uint PERM_FLAGS = PTE_U | PTE_P | PTE_W;
+
   uint i, pa, n;
   pte_t *pte;
 
   if((uint) addr % PGSIZE != 0)
     panic("loaduvm: addr must be page aligned");
+
   for(i = 0; i < sz; i += PGSIZE){
     if((pte = walkpgdir(pgdir, addr+i, 0)) == 0)
       panic("loaduvm: address should exist");
@@ -217,6 +220,10 @@ loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz)
       n = sz - i;
     else
       n = PGSIZE;
+
+	*pte &= ~PERM_FLAGS;  // Clear existing flags
+    *pte |= flags;  // Set flags based on perm_flags
+
     if(readi(ip, P2V(pa), offset+i, n) != n)
       return -1;
   }
