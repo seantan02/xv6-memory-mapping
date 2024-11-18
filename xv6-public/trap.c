@@ -107,7 +107,7 @@ trap(struct trapframe *tf)
 	  }
 	}
 	else{
-        cprintf("TRAP.C: Segmentation Fault\n");
+        cprintf("Segmentation Fault\n");
         myproc()->killed = 1;
 	}
 	break;
