@@ -31,6 +31,7 @@ int vasIntersect(uint addr1, int length1, uint addr2, int length2);
 int updateWmap(struct proc *p, uint addr, int length, int n_loaded_page, int file_backed, int fd, int total_mmaps, int index);
 int dellocateAndUnmap(struct proc *p, uint addr, int length, int i);
 void printWmap(struct proc *p);
+int duplicateFd(int fd);
 int allocateAndMap(struct proc *p, uint addr, int length, int i);
 uint wmap(uint addr, int length, int flags, int fd);
 int wunmap(uint addr);

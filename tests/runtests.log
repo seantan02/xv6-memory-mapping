@@ -8,8 +8,144 @@ build xv6 using make
 **********************************************************************
 Trying to build project using make
 make xv6.img fs.img
-make: 'xv6.img' is up to date.
-make: 'fs.img' is up to date.
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie -fno-pic -O -nostdinc -I. -c bootmain.c
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie -fno-pic -nostdinc -I. -c bootasm.S
+ld -m    elf_i386 -N -e start -Ttext 0x7C00 -o bootblock.o bootasm.o bootmain.o
+objdump -S bootblock.o > bootblock.asm
+objcopy -S -O binary -j .text bootblock.o bootblock
+./sign.pl bootblock
+boot block is 451 bytes (max 510)
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o bio.o bio.c
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o console.o console.c
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o exec.o exec.c
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o file.o file.c
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o fs.o fs.c
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o ide.o ide.c
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o ioapic.o ioapic.c
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o kalloc.o kalloc.c
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o kbd.o kbd.c
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o lapic.o lapic.c
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o log.o log.c
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o main.o main.c
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o mp.o mp.c
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o picirq.o picirq.c
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o pipe.o pipe.c
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o proc.o proc.c
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o sleeplock.o sleeplock.c
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o spinlock.o spinlock.c
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o string.o string.c
+gcc -m32 -gdwarf-2 -Wa,-divide   -c -o swtch.o swtch.S
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o syscall.o syscall.c
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o sysfile.o sysfile.c
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o sysproc.o sysproc.c
+gcc -m32 -gdwarf-2 -Wa,-divide   -c -o trapasm.o trapasm.S
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o trap.o trap.c
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o uart.o uart.c
+./vectors.pl > vectors.S
+gcc -m32 -gdwarf-2 -Wa,-divide   -c -o vectors.o vectors.S
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o vm.o vm.c
+gcc -m32 -gdwarf-2 -Wa,-divide   -c -o entry.o entry.S
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie -fno-pic -nostdinc -I. -c entryother.S
+ld -m    elf_i386 -N -e start -Ttext 0x7000 -o bootblockother.o entryother.o
+objcopy -S -O binary -j .text bootblockother.o entryother
+objdump -S bootblockother.o > entryother.asm
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie -nostdinc -I. -c initcode.S
+ld -m    elf_i386 -N -e start -Ttext 0 -o initcode.out initcode.o
+objcopy -S -O binary initcode.out initcode
+objdump -S initcode.o > initcode.asm
+ld -m    elf_i386 -T kernel.ld -o kernel entry.o bio.o console.o exec.o file.o fs.o ide.o ioapic.o kalloc.o kbd.o lapic.o log.o main.o mp.o picirq.o pipe.o proc.o sleeplock.o spinlock.o string.o swtch.o syscall.o sysfile.o sysproc.o trapasm.o trap.o uart.o vectors.o vm.o  -b binary initcode entryother
+objdump -S kernel > kernel.asm
+objdump -t kernel | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > kernel.sym
+dd if=/dev/zero of=xv6.img count=10000
+10000+0 records in
+10000+0 records out
+5120000 bytes (5.1 MB, 4.9 MiB) copied, 0.0125829 s, 407 MB/s
+dd if=bootblock of=xv6.img conv=notrunc
+1+0 records in
+1+0 records out
+512 bytes copied, 6.9729e-05 s, 7.3 MB/s
+dd if=kernel of=xv6.img seek=1 conv=notrunc
+425+1 records in
+425+1 records out
+218032 bytes (218 kB, 213 KiB) copied, 0.000360137 s, 605 MB/s
+gcc -Werror -Wall -o mkfs mkfs.c
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o ulib.o ulib.c
+gcc -m32 -gdwarf-2 -Wa,-divide   -c -o usys.o usys.S
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o printf.o printf.c
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o umalloc.o umalloc.c
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o cat.o cat.c
+ld -m    elf_i386 -N -e main -Ttext 0 -o _cat cat.o ulib.o usys.o printf.o umalloc.o
+objdump -S _cat > cat.asm
+objdump -t _cat | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > cat.sym
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o echo.o echo.c
+ld -m    elf_i386 -N -e main -Ttext 0 -o _echo echo.o ulib.o usys.o printf.o umalloc.o
+objdump -S _echo > echo.asm
+objdump -t _echo | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > echo.sym
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o forktest.o forktest.c
+# forktest has less library code linked in - needs to be small
+# in order to be able to max out the proc table.
+ld -m    elf_i386 -N -e main -Ttext 0 -o _forktest forktest.o ulib.o usys.o
+objdump -S _forktest > forktest.asm
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o grep.o grep.c
+ld -m    elf_i386 -N -e main -Ttext 0 -o _grep grep.o ulib.o usys.o printf.o umalloc.o
+objdump -S _grep > grep.asm
+objdump -t _grep | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > grep.sym
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o init.o init.c
+ld -m    elf_i386 -N -e main -Ttext 0 -o _init init.o ulib.o usys.o printf.o umalloc.o
+objdump -S _init > init.asm
+objdump -t _init | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > init.sym
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o kill.o kill.c
+ld -m    elf_i386 -N -e main -Ttext 0 -o _kill kill.o ulib.o usys.o printf.o umalloc.o
+objdump -S _kill > kill.asm
+objdump -t _kill | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > kill.sym
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o ln.o ln.c
+ld -m    elf_i386 -N -e main -Ttext 0 -o _ln ln.o ulib.o usys.o printf.o umalloc.o
+objdump -S _ln > ln.asm
+objdump -t _ln | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > ln.sym
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o ls.o ls.c
+ld -m    elf_i386 -N -e main -Ttext 0 -o _ls ls.o ulib.o usys.o printf.o umalloc.o
+objdump -S _ls > ls.asm
+objdump -t _ls | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > ls.sym
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o mkdir.o mkdir.c
+ld -m    elf_i386 -N -e main -Ttext 0 -o _mkdir mkdir.o ulib.o usys.o printf.o umalloc.o
+objdump -S _mkdir > mkdir.asm
+objdump -t _mkdir | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > mkdir.sym
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o rm.o rm.c
+ld -m    elf_i386 -N -e main -Ttext 0 -o _rm rm.o ulib.o usys.o printf.o umalloc.o
+objdump -S _rm > rm.asm
+objdump -t _rm | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > rm.sym
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o sh.o sh.c
+ld -m    elf_i386 -N -e main -Ttext 0 -o _sh sh.o ulib.o usys.o printf.o umalloc.o
+objdump -S _sh > sh.asm
+objdump -t _sh | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > sh.sym
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o stressfs.o stressfs.c
+ld -m    elf_i386 -N -e main -Ttext 0 -o _stressfs stressfs.o ulib.o usys.o printf.o umalloc.o
+objdump -S _stressfs > stressfs.asm
+objdump -t _stressfs | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > stressfs.sym
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o usertests.o usertests.c
+ld -m    elf_i386 -N -e main -Ttext 0 -o _usertests usertests.o ulib.o usys.o printf.o umalloc.o
+objdump -S _usertests > usertests.asm
+objdump -t _usertests | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > usertests.sym
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o wc.o wc.c
+ld -m    elf_i386 -N -e main -Ttext 0 -o _wc wc.o ulib.o usys.o printf.o umalloc.o
+objdump -S _wc > wc.asm
+objdump -t _wc | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > wc.sym
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o zombie.o zombie.c
+ld -m    elf_i386 -N -e main -Ttext 0 -o _zombie zombie.o ulib.o usys.o printf.o umalloc.o
+objdump -S _zombie > zombie.asm
+objdump -t _zombie | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > zombie.sym
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o t12test.o t12test.c
+ld -m    elf_i386 -N -e main -Ttext 0 -o _t12test t12test.o ulib.o usys.o printf.o umalloc.o
+objdump -S _t12test > t12test.asm
+objdump -t _t12test | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > t12test.sym
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o mappingtest.o mappingtest.c
+ld -m    elf_i386 -N -e main -Ttext 0 -o _mappingtest mappingtest.o ulib.o usys.o printf.o umalloc.o
+objdump -S _mappingtest > mappingtest.asm
+objdump -t _mappingtest | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > mappingtest.sym
+./mkfs fs.img README _cat _echo _forktest _grep _init _kill _ln _ls _mkdir _rm _sh _stressfs _usertests _wc _zombie _t12test _mappingtest 
+nmeta 59 (boot, super, log blocks 30 inode blocks 26, bitmap blocks 1) blocks 941 total 1000
+balloc: first 710 blocks have been allocated
+balloc: write bitmap block at sector 58
 
 
 test build PASSED
@@ -27,8 +163,8 @@ Running xv6 user progam /home/siong/private/cs537/p5/tests/ctests/test_1.c
 DEBUG: Copying header file to project path
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmpdo_q79zd/p/Makefile
-/tmp/tmpdo_q79zd/p/Makefile.test
+/tmp/tmpkk9ffeh9/p/Makefile
+/tmp/tmpkk9ffeh9/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -36,9 +172,9 @@ gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 
 ld -m    elf_i386 -N -e main -Ttext 0 -o _tester tester.o ulib.o usys.o printf.o umalloc.o
 objdump -S _tester > tester.asm
 objdump -t _tester | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > tester.sym
-./mkfs fs.img README _cat _echo _forktest _grep _init _kill _ln _ls _tester _mkdir _rm _sh _stressfs _usertests _wc _zombie _t12test 
+./mkfs fs.img README _cat _echo _forktest _grep _init _kill _ln _ls _tester _mkdir _rm _sh _stressfs _usertests _wc _zombie _t12test _mappingtest 
 nmeta 59 (boot, super, log blocks 30 inode blocks 26, bitmap blocks 1) blocks 941 total 1000
-balloc: first 729 blocks have been allocated
+balloc: first 761 blocks have been allocated
 balloc: write bitmap block at sector 58
 qemu-system-i386 -nographic -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp 1 -m 512 
 c[?7l[2J[0mSeaBIOS (version 1.15.0-1)
@@ -57,10 +193,8 @@ tester
 
 
 TEST_1
-SYS_VA2PA: Made it after argint and proceed va2pa call.
 INFO: va2pa(0x0) returned 0xDEE2000
 INFO: total_mmaps = 0
-Made it before first checks
 INFO: wmap() returned -1
 INFO: wunmap() returned -1
 [0;32mSUCCESS:[0m TEST_1	 PASSED
@@ -82,8 +216,8 @@ Running xv6 user progam /home/siong/private/cs537/p5/tests/ctests/test_2.c
 DEBUG: Copying header file to project path
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmpdo_q79zd/p/Makefile
-/tmp/tmpdo_q79zd/p/Makefile.test
+/tmp/tmpkk9ffeh9/p/Makefile
+/tmp/tmpkk9ffeh9/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -91,9 +225,9 @@ gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 
 ld -m    elf_i386 -N -e main -Ttext 0 -o _tester tester.o ulib.o usys.o printf.o umalloc.o
 objdump -S _tester > tester.asm
 objdump -t _tester | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > tester.sym
-./mkfs fs.img README _cat _echo _forktest _grep _init _kill _ln _ls _tester _mkdir _rm _sh _stressfs _usertests _wc _zombie _t12test 
+./mkfs fs.img README _cat _echo _forktest _grep _init _kill _ln _ls _tester _mkdir _rm _sh _stressfs _usertests _wc _zombie _t12test _mappingtest 
 nmeta 59 (boot, super, log blocks 30 inode blocks 26, bitmap blocks 1) blocks 941 total 1000
-balloc: first 727 blocks have been allocated
+balloc: first 758 blocks have been allocated
 balloc: write bitmap block at sector 58
 qemu-system-i386 -nographic -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp 1 -m 512 
 c[?7l[2J[0mSeaBIOS (version 1.15.0-1)
@@ -112,23 +246,7 @@ tester
 
 
 TEST_2
-looking if we have that address cover : -2147483647
-looking if we have that address cover : -2147483647
-looking if we have that address cover : -2147483647
-looking if we have that address cover : -2147483647
-looking if we have that address cover : -2147483647
-looking if we have that address cover : -2147483647
-looking if we have that address cover : -2147483647
-looking if we have that address cover : -2147483647
-looking if we have that address cover : -2147483647
-looking if we have that address cover : -2147483647
-looking if we have that address cover : -2147483647
-looking if we have that address cover : -2147483647
-looking if we have that address cover : -2147483647
-looking if we have that address cover : -2147483647
-looking if we have that address cover : -2147483647
-looking if we have that address cover : -2147483647
-Segmentation Fault
+TRAP.C: Segmentation Fault
 $ 
 
 test test_2 PASSED (1 of 1)
@@ -146,8 +264,8 @@ Running xv6 user progam /home/siong/private/cs537/p5/tests/ctests/test_3.c
 DEBUG: Copying header file to project path
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmpdo_q79zd/p/Makefile
-/tmp/tmpdo_q79zd/p/Makefile.test
+/tmp/tmpkk9ffeh9/p/Makefile
+/tmp/tmpkk9ffeh9/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -155,9 +273,9 @@ gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 
 ld -m    elf_i386 -N -e main -Ttext 0 -o _tester tester.o ulib.o usys.o printf.o umalloc.o
 objdump -S _tester > tester.asm
 objdump -t _tester | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > tester.sym
-./mkfs fs.img README _cat _echo _forktest _grep _init _kill _ln _ls _tester _mkdir _rm _sh _stressfs _usertests _wc _zombie _t12test 
+./mkfs fs.img README _cat _echo _forktest _grep _init _kill _ln _ls _tester _mkdir _rm _sh _stressfs _usertests _wc _zombie _t12test _mappingtest 
 nmeta 59 (boot, super, log blocks 30 inode blocks 26, bitmap blocks 1) blocks 941 total 1000
-balloc: first 729 blocks have been allocated
+balloc: first 761 blocks have been allocated
 balloc: write bitmap block at sector 58
 qemu-system-i386 -nographic -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp 1 -m 512 
 c[?7l[2J[0mSeaBIOS (version 1.15.0-1)
@@ -177,45 +295,7 @@ tester
 
 TEST_3
 INFO: Initially 0 maps. 	Okay.
-Made it before first checks
-Made it after first checks
-WMAP: fbacked: 0
-WMAP: Made it after first checks
-For index 0
-Addr is 1610620928, length is 16392, n_loaded_pages is 0, total mmap is 1
-For index 1
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 2
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 3
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 4
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 5
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 6
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 7
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 8
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 9
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 10
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 11
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 12
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 13
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 14
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 15
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
 INFO: Map 1 at 0x60002000 with length 0x4008. 	Okay.
-Made it before first checks
-Made it before first checks
 [0;32mSUCCESS:[0m TEST_3	 PASSED
 
 $ 
@@ -235,8 +315,8 @@ Running xv6 user progam /home/siong/private/cs537/p5/tests/ctests/test_4.c
 DEBUG: Copying header file to project path
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmpdo_q79zd/p/Makefile
-/tmp/tmpdo_q79zd/p/Makefile.test
+/tmp/tmpkk9ffeh9/p/Makefile
+/tmp/tmpkk9ffeh9/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -244,9 +324,9 @@ gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 
 ld -m    elf_i386 -N -e main -Ttext 0 -o _tester tester.o ulib.o usys.o printf.o umalloc.o
 objdump -S _tester > tester.asm
 objdump -t _tester | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > tester.sym
-./mkfs fs.img README _cat _echo _forktest _grep _init _kill _ln _ls _tester _mkdir _rm _sh _stressfs _usertests _wc _zombie _t12test 
+./mkfs fs.img README _cat _echo _forktest _grep _init _kill _ln _ls _tester _mkdir _rm _sh _stressfs _usertests _wc _zombie _t12test _mappingtest 
 nmeta 59 (boot, super, log blocks 30 inode blocks 26, bitmap blocks 1) blocks 941 total 1000
-balloc: first 728 blocks have been allocated
+balloc: first 760 blocks have been allocated
 balloc: write bitmap block at sector 58
 qemu-system-i386 -nographic -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp 1 -m 512 
 c[?7l[2J[0mSeaBIOS (version 1.15.0-1)
@@ -267,42 +347,6 @@ tester
 TEST_4
 INFO: Initially 0 maps. 	Okay.
 INFO: Created file small.txt with length 512 bytes. 	Okay.
-Made it before first checks
-Made it after first checks
-WMAP: fbacked: 1
-WMAP: Made it after first checks
-For index 0
-Addr is 1610805248, length is 512, n_loaded_pages is 0, total mmap is 1
-For index 1
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 2
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 3
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 4
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 5
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 6
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 7
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 8
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 9
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 10
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 11
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 12
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 13
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 14
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 15
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
 INFO: Map 1 at 0x6002F000 with length 0x200. 	Okay.
 [0;32mSUCCESS:[0m TEST_4	 PASSED
 
@@ -323,8 +367,8 @@ Running xv6 user progam /home/siong/private/cs537/p5/tests/ctests/test_5.c
 DEBUG: Copying header file to project path
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmpdo_q79zd/p/Makefile
-/tmp/tmpdo_q79zd/p/Makefile.test
+/tmp/tmpkk9ffeh9/p/Makefile
+/tmp/tmpkk9ffeh9/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -332,9 +376,9 @@ gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 
 ld -m    elf_i386 -N -e main -Ttext 0 -o _tester tester.o ulib.o usys.o printf.o umalloc.o
 objdump -S _tester > tester.asm
 objdump -t _tester | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > tester.sym
-./mkfs fs.img README _cat _echo _forktest _grep _init _kill _ln _ls _tester _mkdir _rm _sh _stressfs _usertests _wc _zombie _t12test 
+./mkfs fs.img README _cat _echo _forktest _grep _init _kill _ln _ls _tester _mkdir _rm _sh _stressfs _usertests _wc _zombie _t12test _mappingtest 
 nmeta 59 (boot, super, log blocks 30 inode blocks 26, bitmap blocks 1) blocks 941 total 1000
-balloc: first 731 blocks have been allocated
+balloc: first 763 blocks have been allocated
 balloc: write bitmap block at sector 58
 qemu-system-i386 -nographic -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp 1 -m 512 
 c[?7l[2J[0mSeaBIOS (version 1.15.0-1)
@@ -355,122 +399,9 @@ tester
 TEST_5
 INFO: Initially 0 maps. 	Okay.
 INFO: Created file small.txt with length 512 bytes. 	Okay.
-Made it before first checks
-Made it after first checks
-WMAP: fbacked: 1
-WMAP: Made it after first checks
-For index 0
-Addr is 1610612736, length is 512, n_loaded_pages is 0, total mmap is 1
-For index 1
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 2
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 3
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 4
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 5
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 6
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 7
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 8
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 9
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 10
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 11
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 12
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 13
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 14
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 15
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
 INFO: Map 1 at 0x60000000 with length 512. 	Okay.
-Made it before first checks
-Made it after first checks
-WMAP: fbacked: 0
-WMAP: Made it after first checks
-For index 0
-Addr is 1610612736, length is 512, n_loaded_pages is 0, total mmap is 2
-For index 1
-Addr is 1610620928, length is 8192, n_loaded_pages is 0, total mmap is 2
-For index 2
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 2
-For index 3
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 2
-For index 4
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 2
-For index 5
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 2
-For index 6
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 2
-For index 7
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 2
-For index 8
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 2
-For index 9
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 2
-For index 10
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 2
-For index 11
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 2
-For index 12
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 2
-For index 13
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 2
-For index 14
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 2
-For index 15
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 2
 INFO: Map 2 at 0x60002000 with length 8192. 	Okay.
-Made it before first checks
-Made it after first checks
-WMAP: fbacked: 0
-WMAP: Made it after first checks
-WMAP: Address intersects 1610625024 12296 1610620928 8192
 INFO: Map 3 does not exist. 	Okay.
-Made it before first checks
-Made it after first checks
-WMAP: fbacked: 0
-WMAP: Made it after first checks
-For index 0
-Addr is 1610612736, length is 512, n_loaded_pages is 0, total mmap is 3
-For index 1
-Addr is 1610620928, length is 8192, n_loaded_pages is 0, total mmap is 3
-For index 2
-Addr is 1610629120, length is 819200, n_loaded_pages is 0, total mmap is 3
-For index 3
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 3
-For index 4
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 3
-For index 5
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 3
-For index 6
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 3
-For index 7
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 3
-For index 8
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 3
-For index 9
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 3
-For index 10
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 3
-For index 11
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 3
-For index 12
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 3
-For index 13
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 3
-For index 14
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 3
-For index 15
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 3
 INFO: Map 4 at 0x60004000 with length 819200. 	Okay.
 [0;32mSUCCESS:[0m TEST_5	 PASSED
 
@@ -491,8 +422,8 @@ Running xv6 user progam /home/siong/private/cs537/p5/tests/ctests/test_6.c
 DEBUG: Copying header file to project path
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmpdo_q79zd/p/Makefile
-/tmp/tmpdo_q79zd/p/Makefile.test
+/tmp/tmpkk9ffeh9/p/Makefile
+/tmp/tmpkk9ffeh9/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -500,9 +431,9 @@ gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 
 ld -m    elf_i386 -N -e main -Ttext 0 -o _tester tester.o ulib.o usys.o printf.o umalloc.o
 objdump -S _tester > tester.asm
 objdump -t _tester | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > tester.sym
-./mkfs fs.img README _cat _echo _forktest _grep _init _kill _ln _ls _tester _mkdir _rm _sh _stressfs _usertests _wc _zombie _t12test 
+./mkfs fs.img README _cat _echo _forktest _grep _init _kill _ln _ls _tester _mkdir _rm _sh _stressfs _usertests _wc _zombie _t12test _mappingtest 
 nmeta 59 (boot, super, log blocks 30 inode blocks 26, bitmap blocks 1) blocks 941 total 1000
-balloc: first 730 blocks have been allocated
+balloc: first 762 blocks have been allocated
 balloc: write bitmap block at sector 58
 qemu-system-i386 -nographic -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp 1 -m 512 
 c[?7l[2J[0mSeaBIOS (version 1.15.0-1)
@@ -522,56 +453,7 @@ tester
 
 TEST_6
 INFO: Initially 0 maps. 	Okay.
-Made it before first checks
-Made it after first checks
-WMAP: fbacked: 0
-WMAP: Made it after first checks
-For index 0
-Addr is 1610620928, length is 8292, n_loaded_pages is 0, total mmap is 1
-For index 1
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 2
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 3
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 4
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 5
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 6
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 7
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 8
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 9
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 10
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 11
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 12
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 13
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 14
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 15
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
 INFO: Map 1 at 0x60002000 with length 8292. 	Okay.
-looking if we have that address cover : 1610620928
-AllocateAndMap: Start addr: 1610620928, end addr :1610625024
-Mapping memory for addrss :1610620928 
-looking if we have that address cover : 1610625024
-AllocateAndMap: Start addr: 1610625024, end addr :1610629120
-Mapping memory for addrss :1610625024 
-looking if we have that address cover : 1610629120
-AllocateAndMap: Start addr: 1610629120, end addr :1610633216
-Mapping memory for addrss :1610629120 
-SYS_VA2PA: Made it after argint and proceed va2pa call.
-SYS_VA2PA: Made it after argint and proceed va2pa call.
-SYS_VA2PA: Made it after argint and proceed va2pa call.
-SYS_VA2PA: Made it after argint and proceed va2pa call.
 INFO: Accessed all pages of Map 1. 	Okay.
 [0;32mSUCCESS:[0m TEST_6	 PASSED
 
@@ -592,8 +474,8 @@ Running xv6 user progam /home/siong/private/cs537/p5/tests/ctests/test_7.c
 DEBUG: Copying header file to project path
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmpdo_q79zd/p/Makefile
-/tmp/tmpdo_q79zd/p/Makefile.test
+/tmp/tmpkk9ffeh9/p/Makefile
+/tmp/tmpkk9ffeh9/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -601,9 +483,9 @@ gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 
 ld -m    elf_i386 -N -e main -Ttext 0 -o _tester tester.o ulib.o usys.o printf.o umalloc.o
 objdump -S _tester > tester.asm
 objdump -t _tester | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > tester.sym
-./mkfs fs.img README _cat _echo _forktest _grep _init _kill _ln _ls _tester _mkdir _rm _sh _stressfs _usertests _wc _zombie _t12test 
+./mkfs fs.img README _cat _echo _forktest _grep _init _kill _ln _ls _tester _mkdir _rm _sh _stressfs _usertests _wc _zombie _t12test _mappingtest 
 nmeta 59 (boot, super, log blocks 30 inode blocks 26, bitmap blocks 1) blocks 941 total 1000
-balloc: first 731 blocks have been allocated
+balloc: first 763 blocks have been allocated
 balloc: write bitmap block at sector 58
 qemu-system-i386 -nographic -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp 1 -m 512 
 c[?7l[2J[0mSeaBIOS (version 1.15.0-1)
@@ -629,47 +511,10 @@ INFO: 115
 INFO: 116
 INFO: 117
 INFO: Created file big.txt with length 20480 bytes. 	Okay.
-Made it before first checks
-Made it after first checks
-WMAP: fbacked: 1
-WMAP: Made it after first checks
-For index 0
-Addr is 1610612736, length is 20480, n_loaded_pages is 0, total mmap is 1
-For index 1
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 2
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 3
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 4
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 5
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 6
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 7
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 8
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 9
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 10
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 11
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 12
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 13
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 14
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 15
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
 INFO: Placed map 1 at 0x60000000 with length 20480. 	Okay.
-looking if we have that address cover : 1610612736
-AllocateAndMap: Start addr: 1610612736, end addr :1610616832
-Mapping memory for addrss :1610612736 
-Allocating and mapping failed
+INFO: Accessed all pages of Map 1. 	Okay.
+[0;32mSUCCESS:[0m TEST_7	 PASSED
+
 $ 
 
 test test_7 PASSED (1 of 1)
@@ -687,8 +532,8 @@ Running xv6 user progam /home/siong/private/cs537/p5/tests/ctests/test_8.c
 DEBUG: Copying header file to project path
 Trying to build project using make
 make xv6.img fs.img
-/tmp/tmpdo_q79zd/p/Makefile
-/tmp/tmpdo_q79zd/p/Makefile.test
+/tmp/tmpkk9ffeh9/p/Makefile
+/tmp/tmpkk9ffeh9/p/Makefile.test
 make: 'xv6.img' is up to date.
 make: 'fs.img' is up to date.
 make qemu-nox CPUS=1
@@ -696,9 +541,9 @@ gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 
 ld -m    elf_i386 -N -e main -Ttext 0 -o _tester tester.o ulib.o usys.o printf.o umalloc.o
 objdump -S _tester > tester.asm
 objdump -t _tester | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > tester.sym
-./mkfs fs.img README _cat _echo _forktest _grep _init _kill _ln _ls _tester _mkdir _rm _sh _stressfs _usertests _wc _zombie _t12test 
+./mkfs fs.img README _cat _echo _forktest _grep _init _kill _ln _ls _tester _mkdir _rm _sh _stressfs _usertests _wc _zombie _t12test _mappingtest 
 nmeta 59 (boot, super, log blocks 30 inode blocks 26, bitmap blocks 1) blocks 941 total 1000
-balloc: first 735 blocks have been allocated
+balloc: first 767 blocks have been allocated
 balloc: write bitmap block at sector 58
 qemu-system-i386 -nographic -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp 1 -m 512 
 c[?7l[2J[0mSeaBIOS (version 1.15.0-1)
@@ -725,809 +570,533 @@ INFO: 100
 INFO: 101
 INFO: 102
 INFO: Created file bigfile with length 20480 bytes. 	Okay.
-Made it before first checks
-Made it after first checks
-WMAP: fbacked: 0
-WMAP: Made it after first checks
-For index 0
-Addr is 1610612736, length is 1638400, n_loaded_pages is 0, total mmap is 1
-For index 1
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 2
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 3
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 4
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 5
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 6
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 7
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 8
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 9
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 10
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 11
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 12
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 13
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 14
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
-For index 15
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 1
 INFO: Map 1 is placed at 0x60000000. 	Okay.
-Made it before first checks
-Made it after first checks
-WMAP: fbacked: 1
-WMAP: Made it after first checks
-For index 0
-Addr is 1610612736, length is 1638400, n_loaded_pages is 0, total mmap is 2
-For index 1
-Addr is 1612255232, length is 20480, n_loaded_pages is 0, total mmap is 2
-For index 2
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 2
-For index 3
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 2
-For index 4
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 2
-For index 5
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 2
-For index 6
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 2
-For index 7
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 2
-For index 8
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 2
-For index 9
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 2
-For index 10
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 2
-For index 11
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 2
-For index 12
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 2
-For index 13
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 2
-For index 14
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 2
-For index 15
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 2
 INFO: Map 2 is placed at 0x60191000. 	Okay.
-Made it before first checks
-Made it after first checks
-WMAP: fbacked: 1
-WMAP: Made it after first checks
-For index 0
-Addr is 1610612736, length is 1638400, n_loaded_pages is 0, total mmap is 3
-For index 1
-Addr is 1612255232, length is 20480, n_loaded_pages is 0, total mmap is 3
-For index 2
-Addr is 1612251136, length is 512, n_loaded_pages is 0, total mmap is 3
-For index 3
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 3
-For index 4
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 3
-For index 5
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 3
-For index 6
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 3
-For index 7
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 3
-For index 8
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 3
-For index 9
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 3
-For index 10
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 3
-For index 11
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 3
-For index 12
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 3
-For index 13
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 3
-For index 14
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 3
-For index 15
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 3
 INFO: Map 3 is placed at 0x60190000. 	Okay.
-Made it before first checks
-Made it after first checks
-WMAP: fbacked: 0
-WMAP: Made it after first checks
-For index 0
-Addr is 1610612736, length is 1638400, n_loaded_pages is 0, total mmap is 4
-For index 1
-Addr is 1612255232, length is 20480, n_loaded_pages is 0, total mmap is 4
-For index 2
-Addr is 1612251136, length is 512, n_loaded_pages is 0, total mmap is 4
-For index 3
-Addr is 1612275712, length is 8192000, n_loaded_pages is 0, total mmap is 4
-For index 4
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 4
-For index 5
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 4
-For index 6
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 4
-For index 7
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 4
-For index 8
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 4
-For index 9
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 4
-For index 10
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 4
-For index 11
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 4
-For index 12
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 4
-For index 13
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 4
-For index 14
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 4
-For index 15
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 4
 INFO: Map 4 is placed at 0x60196000. 	Okay.
-Made it before first checks
-Made it after first checks
-WMAP: fbacked: 0
-WMAP: Made it after first checks
-For index 0
-Addr is 1610612736, length is 1638400, n_loaded_pages is 0, total mmap is 5
-For index 1
-Addr is 1612255232, length is 20480, n_loaded_pages is 0, total mmap is 5
-For index 2
-Addr is 1612251136, length is 512, n_loaded_pages is 0, total mmap is 5
-For index 3
-Addr is 1612275712, length is 8192000, n_loaded_pages is 0, total mmap is 5
-For index 4
-Addr is 1620488192, length is 102400, n_loaded_pages is 0, total mmap is 5
-For index 5
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 5
-For index 6
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 5
-For index 7
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 5
-For index 8
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 5
-For index 9
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 5
-For index 10
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 5
-For index 11
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 5
-For index 12
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 5
-For index 13
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 5
-For index 14
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 5
-For index 15
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 5
 INFO: Map 5 is placed at 0x6096B000. 	Okay.
-Made it before first checks
-Made it after first checks
-WMAP: fbacked: 0
-WMAP: Made it after first checks
-For index 0
-Addr is 1610612736, length is 1638400, n_loaded_pages is 0, total mmap is 6
-For index 1
-Addr is 1612255232, length is 20480, n_loaded_pages is 0, total mmap is 6
-For index 2
-Addr is 1612251136, length is 512, n_loaded_pages is 0, total mmap is 6
-For index 3
-Addr is 1612275712, length is 8192000, n_loaded_pages is 0, total mmap is 6
-For index 4
-Addr is 1620488192, length is 102400, n_loaded_pages is 0, total mmap is 6
-For index 5
-Addr is 1620590592, length is 122880, n_loaded_pages is 0, total mmap is 6
-For index 6
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 6
-For index 7
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 6
-For index 8
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 6
-For index 9
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 6
-For index 10
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 6
-For index 11
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 6
-For index 12
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 6
-For index 13
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 6
-For index 14
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 6
-For index 15
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 6
 INFO: Map 6 is placed at 0x60984000. 	Okay.
-Made it before first checks
-Made it after first checks
-WMAP: fbacked: 0
-WMAP: Made it after first checks
-For index 0
-Addr is 1610612736, length is 1638400, n_loaded_pages is 0, total mmap is 7
-For index 1
-Addr is 1612255232, length is 20480, n_loaded_pages is 0, total mmap is 7
-For index 2
-Addr is 1612251136, length is 512, n_loaded_pages is 0, total mmap is 7
-For index 3
-Addr is 1612275712, length is 8192000, n_loaded_pages is 0, total mmap is 7
-For index 4
-Addr is 1620488192, length is 102400, n_loaded_pages is 0, total mmap is 7
-For index 5
-Addr is 1620590592, length is 122880, n_loaded_pages is 0, total mmap is 7
-For index 6
-Addr is 1620713472, length is 143360, n_loaded_pages is 0, total mmap is 7
-For index 7
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 7
-For index 8
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 7
-For index 9
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 7
-For index 10
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 7
-For index 11
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 7
-For index 12
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 7
-For index 13
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 7
-For index 14
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 7
-For index 15
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 7
 INFO: Map 7 is placed at 0x609A2000. 	Okay.
-Made it before first checks
-Made it after first checks
-WMAP: fbacked: 0
-WMAP: Made it after first checks
-For index 0
-Addr is 1610612736, length is 1638400, n_loaded_pages is 0, total mmap is 8
-For index 1
-Addr is 1612255232, length is 20480, n_loaded_pages is 0, total mmap is 8
-For index 2
-Addr is 1612251136, length is 512, n_loaded_pages is 0, total mmap is 8
-For index 3
-Addr is 1612275712, length is 8192000, n_loaded_pages is 0, total mmap is 8
-For index 4
-Addr is 1620488192, length is 102400, n_loaded_pages is 0, total mmap is 8
-For index 5
-Addr is 1620590592, length is 122880, n_loaded_pages is 0, total mmap is 8
-For index 6
-Addr is 1620713472, length is 143360, n_loaded_pages is 0, total mmap is 8
-For index 7
-Addr is 1620856832, length is 163840, n_loaded_pages is 0, total mmap is 8
-For index 8
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 8
-For index 9
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 8
-For index 10
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 8
-For index 11
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 8
-For index 12
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 8
-For index 13
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 8
-For index 14
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 8
-For index 15
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 8
 INFO: Map 8 is placed at 0x609C5000. 	Okay.
-Made it before first checks
-Made it after first checks
-WMAP: fbacked: 0
-WMAP: Made it after first checks
-For index 0
-Addr is 1610612736, length is 1638400, n_loaded_pages is 0, total mmap is 9
-For index 1
-Addr is 1612255232, length is 20480, n_loaded_pages is 0, total mmap is 9
-For index 2
-Addr is 1612251136, length is 512, n_loaded_pages is 0, total mmap is 9
-For index 3
-Addr is 1612275712, length is 8192000, n_loaded_pages is 0, total mmap is 9
-For index 4
-Addr is 1620488192, length is 102400, n_loaded_pages is 0, total mmap is 9
-For index 5
-Addr is 1620590592, length is 122880, n_loaded_pages is 0, total mmap is 9
-For index 6
-Addr is 1620713472, length is 143360, n_loaded_pages is 0, total mmap is 9
-For index 7
-Addr is 1620856832, length is 163840, n_loaded_pages is 0, total mmap is 9
-For index 8
-Addr is 1621020672, length is 184320, n_loaded_pages is 0, total mmap is 9
-For index 9
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 9
-For index 10
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 9
-For index 11
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 9
-For index 12
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 9
-For index 13
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 9
-For index 14
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 9
-For index 15
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 9
 INFO: Map 9 is placed at 0x609ED000. 	Okay.
-Made it before first checks
-Made it after first checks
-WMAP: fbacked: 0
-WMAP: Made it after first checks
-For index 0
-Addr is 1610612736, length is 1638400, n_loaded_pages is 0, total mmap is 10
-For index 1
-Addr is 1612255232, length is 20480, n_loaded_pages is 0, total mmap is 10
-For index 2
-Addr is 1612251136, length is 512, n_loaded_pages is 0, total mmap is 10
-For index 3
-Addr is 1612275712, length is 8192000, n_loaded_pages is 0, total mmap is 10
-For index 4
-Addr is 1620488192, length is 102400, n_loaded_pages is 0, total mmap is 10
-For index 5
-Addr is 1620590592, length is 122880, n_loaded_pages is 0, total mmap is 10
-For index 6
-Addr is 1620713472, length is 143360, n_loaded_pages is 0, total mmap is 10
-For index 7
-Addr is 1620856832, length is 163840, n_loaded_pages is 0, total mmap is 10
-For index 8
-Addr is 1621020672, length is 184320, n_loaded_pages is 0, total mmap is 10
-For index 9
-Addr is 1621204992, length is 204800, n_loaded_pages is 0, total mmap is 10
-For index 10
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 10
-For index 11
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 10
-For index 12
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 10
-For index 13
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 10
-For index 14
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 10
-For index 15
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 10
 INFO: Map 10 is placed at 0x60A1A000. 	Okay.
-Made it before first checks
-Made it after first checks
-WMAP: fbacked: 0
-WMAP: Made it after first checks
-For index 0
-Addr is 1610612736, length is 1638400, n_loaded_pages is 0, total mmap is 11
-For index 1
-Addr is 1612255232, length is 20480, n_loaded_pages is 0, total mmap is 11
-For index 2
-Addr is 1612251136, length is 512, n_loaded_pages is 0, total mmap is 11
-For index 3
-Addr is 1612275712, length is 8192000, n_loaded_pages is 0, total mmap is 11
-For index 4
-Addr is 1620488192, length is 102400, n_loaded_pages is 0, total mmap is 11
-For index 5
-Addr is 1620590592, length is 122880, n_loaded_pages is 0, total mmap is 11
-For index 6
-Addr is 1620713472, length is 143360, n_loaded_pages is 0, total mmap is 11
-For index 7
-Addr is 1620856832, length is 163840, n_loaded_pages is 0, total mmap is 11
-For index 8
-Addr is 1621020672, length is 184320, n_loaded_pages is 0, total mmap is 11
-For index 9
-Addr is 1621204992, length is 204800, n_loaded_pages is 0, total mmap is 11
-For index 10
-Addr is 1621409792, length is 225280, n_loaded_pages is 0, total mmap is 11
-For index 11
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 11
-For index 12
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 11
-For index 13
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 11
-For index 14
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 11
-For index 15
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 11
 INFO: Map 11 is placed at 0x60A4C000. 	Okay.
-Made it before first checks
-Made it after first checks
-WMAP: fbacked: 0
-WMAP: Made it after first checks
-For index 0
-Addr is 1610612736, length is 1638400, n_loaded_pages is 0, total mmap is 12
-For index 1
-Addr is 1612255232, length is 20480, n_loaded_pages is 0, total mmap is 12
-For index 2
-Addr is 1612251136, length is 512, n_loaded_pages is 0, total mmap is 12
-For index 3
-Addr is 1612275712, length is 8192000, n_loaded_pages is 0, total mmap is 12
-For index 4
-Addr is 1620488192, length is 102400, n_loaded_pages is 0, total mmap is 12
-For index 5
-Addr is 1620590592, length is 122880, n_loaded_pages is 0, total mmap is 12
-For index 6
-Addr is 1620713472, length is 143360, n_loaded_pages is 0, total mmap is 12
-For index 7
-Addr is 1620856832, length is 163840, n_loaded_pages is 0, total mmap is 12
-For index 8
-Addr is 1621020672, length is 184320, n_loaded_pages is 0, total mmap is 12
-For index 9
-Addr is 1621204992, length is 204800, n_loaded_pages is 0, total mmap is 12
-For index 10
-Addr is 1621409792, length is 225280, n_loaded_pages is 0, total mmap is 12
-For index 11
-Addr is 1621635072, length is 245760, n_loaded_pages is 0, total mmap is 12
-For index 12
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 12
-For index 13
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 12
-For index 14
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 12
-For index 15
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 12
 INFO: Map 12 is placed at 0x60A83000. 	Okay.
-Made it before first checks
-Made it after first checks
-WMAP: fbacked: 0
-WMAP: Made it after first checks
-For index 0
-Addr is 1610612736, length is 1638400, n_loaded_pages is 0, total mmap is 13
-For index 1
-Addr is 1612255232, length is 20480, n_loaded_pages is 0, total mmap is 13
-For index 2
-Addr is 1612251136, length is 512, n_loaded_pages is 0, total mmap is 13
-For index 3
-Addr is 1612275712, length is 8192000, n_loaded_pages is 0, total mmap is 13
-For index 4
-Addr is 1620488192, length is 102400, n_loaded_pages is 0, total mmap is 13
-For index 5
-Addr is 1620590592, length is 122880, n_loaded_pages is 0, total mmap is 13
-For index 6
-Addr is 1620713472, length is 143360, n_loaded_pages is 0, total mmap is 13
-For index 7
-Addr is 1620856832, length is 163840, n_loaded_pages is 0, total mmap is 13
-For index 8
-Addr is 1621020672, length is 184320, n_loaded_pages is 0, total mmap is 13
-For index 9
-Addr is 1621204992, length is 204800, n_loaded_pages is 0, total mmap is 13
-For index 10
-Addr is 1621409792, length is 225280, n_loaded_pages is 0, total mmap is 13
-For index 11
-Addr is 1621635072, length is 245760, n_loaded_pages is 0, total mmap is 13
-For index 12
-Addr is 1621880832, length is 266240, n_loaded_pages is 0, total mmap is 13
-For index 13
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 13
-For index 14
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 13
-For index 15
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 13
 INFO: Map 13 is placed at 0x60ABF000. 	Okay.
-Made it before first checks
-Made it after first checks
-WMAP: fbacked: 0
-WMAP: Made it after first checks
-For index 0
-Addr is 1610612736, length is 1638400, n_loaded_pages is 0, total mmap is 14
-For index 1
-Addr is 1612255232, length is 20480, n_loaded_pages is 0, total mmap is 14
-For index 2
-Addr is 1612251136, length is 512, n_loaded_pages is 0, total mmap is 14
-For index 3
-Addr is 1612275712, length is 8192000, n_loaded_pages is 0, total mmap is 14
-For index 4
-Addr is 1620488192, length is 102400, n_loaded_pages is 0, total mmap is 14
-For index 5
-Addr is 1620590592, length is 122880, n_loaded_pages is 0, total mmap is 14
-For index 6
-Addr is 1620713472, length is 143360, n_loaded_pages is 0, total mmap is 14
-For index 7
-Addr is 1620856832, length is 163840, n_loaded_pages is 0, total mmap is 14
-For index 8
-Addr is 1621020672, length is 184320, n_loaded_pages is 0, total mmap is 14
-For index 9
-Addr is 1621204992, length is 204800, n_loaded_pages is 0, total mmap is 14
-For index 10
-Addr is 1621409792, length is 225280, n_loaded_pages is 0, total mmap is 14
-For index 11
-Addr is 1621635072, length is 245760, n_loaded_pages is 0, total mmap is 14
-For index 12
-Addr is 1621880832, length is 266240, n_loaded_pages is 0, total mmap is 14
-For index 13
-Addr is 1622147072, length is 286720, n_loaded_pages is 0, total mmap is 14
-For index 14
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 14
-For index 15
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 14
 INFO: Map 14 is placed at 0x60B00000. 	Okay.
-Made it before first checks
-Made it after first checks
-WMAP: fbacked: 0
-WMAP: Made it after first checks
-For index 0
-Addr is 1610612736, length is 1638400, n_loaded_pages is 0, total mmap is 15
-For index 1
-Addr is 1612255232, length is 20480, n_loaded_pages is 0, total mmap is 15
-For index 2
-Addr is 1612251136, length is 512, n_loaded_pages is 0, total mmap is 15
-For index 3
-Addr is 1612275712, length is 8192000, n_loaded_pages is 0, total mmap is 15
-For index 4
-Addr is 1620488192, length is 102400, n_loaded_pages is 0, total mmap is 15
-For index 5
-Addr is 1620590592, length is 122880, n_loaded_pages is 0, total mmap is 15
-For index 6
-Addr is 1620713472, length is 143360, n_loaded_pages is 0, total mmap is 15
-For index 7
-Addr is 1620856832, length is 163840, n_loaded_pages is 0, total mmap is 15
-For index 8
-Addr is 1621020672, length is 184320, n_loaded_pages is 0, total mmap is 15
-For index 9
-Addr is 1621204992, length is 204800, n_loaded_pages is 0, total mmap is 15
-For index 10
-Addr is 1621409792, length is 225280, n_loaded_pages is 0, total mmap is 15
-For index 11
-Addr is 1621635072, length is 245760, n_loaded_pages is 0, total mmap is 15
-For index 12
-Addr is 1621880832, length is 266240, n_loaded_pages is 0, total mmap is 15
-For index 13
-Addr is 1622147072, length is 286720, n_loaded_pages is 0, total mmap is 15
-For index 14
-Addr is 1622433792, length is 307200, n_loaded_pages is 0, total mmap is 15
-For index 15
-Addr is 0, length is -1, n_loaded_pages is 0, total mmap is 15
 INFO: Map 15 is placed at 0x60B46000. 	Okay.
-Made it before first checks
-Made it after first checks
-WMAP: fbacked: 0
-WMAP: Made it after first checks
-For index 0
-Addr is 1610612736, length is 1638400, n_loaded_pages is 0, total mmap is 16
-For index 1
-Addr is 1612255232, length is 20480, n_loaded_pages is 0, total mmap is 16
-For index 2
-Addr is 1612251136, length is 512, n_loaded_pages is 0, total mmap is 16
-For index 3
-Addr is 1612275712, length is 8192000, n_loaded_pages is 0, total mmap is 16
-For index 4
-Addr is 1620488192, length is 102400, n_loaded_pages is 0, total mmap is 16
-For index 5
-Addr is 1620590592, length is 122880, n_loaded_pages is 0, total mmap is 16
-For index 6
-Addr is 1620713472, length is 143360, n_loaded_pages is 0, total mmap is 16
-For index 7
-Addr is 1620856832, length is 163840, n_loaded_pages is 0, total mmap is 16
-For index 8
-Addr is 1621020672, length is 184320, n_loaded_pages is 0, total mmap is 16
-For index 9
-Addr is 1621204992, length is 204800, n_loaded_pages is 0, total mmap is 16
-For index 10
-Addr is 1621409792, length is 225280, n_loaded_pages is 0, total mmap is 16
-For index 11
-Addr is 1621635072, length is 245760, n_loaded_pages is 0, total mmap is 16
-For index 12
-Addr is 1621880832, length is 266240, n_loaded_pages is 0, total mmap is 16
-For index 13
-Addr is 1622147072, length is 286720, n_loaded_pages is 0, total mmap is 16
-For index 14
-Addr is 1622433792, length is 307200, n_loaded_pages is 0, total mmap is 16
-For index 15
-Addr is 1622740992, length is 327680, n_loaded_pages is 0, total mmap is 16
 INFO: Map 16 is placed at 0x60B91000. 	Okay.
 INFO: Map 1 ~ 16 do not overlap with each other. 	Okay
-looking if we have that address cover : 1610612736
-AllocateAndMap: Start addr: 1610612736, end addr :1610616832
-Mapping memory for addrss :1610612736 
-looking if we have that address cover : 1610616832
-AllocateAndMap: Start addr: 1610616832, end addr :1610620928
-Mapping memory for addrss :1610616832 
-looking if we have that address cover : 1610620928
-AllocateAndMap: Start addr: 1610620928, end addr :1610625024
-Mapping memory for addrss :1610620928 
-looking if we have that address cover : 1610625024
-AllocateAndMap: Start addr: 1610625024, end addr :1610629120
-Mapping memory for addrss :1610625024 
-looking if we have that address cover : 1610629120
-AllocateAndMap: Start addr: 1610629120, end addr :1610633216
-Mapping memory for addrss :1610629120 
-looking if we have that address cover : 1610633216
-AllocateAndMap: Start addr: 1610633216, end addr :1610637312
-Mapping memory for addrss :1610633216 
-looking if we have that address cover : 1610637312
-AllocateAndMap: Start addr: 1610637312, end addr :1610641408
-Mapping memory for addrss :1610637312 
-looking if we have that address cover : 1610641408
-AllocateAndMap: Start addr: 1610641408, end addr :1610645504
-Mapping memory for addrss :1610641408 
-looking if we have that address cover : 1610645504
-AllocateAndMap: Start addr: 1610645504, end addr :1610649600
-Mapping memory for addrss :1610645504 
-looking if we have that address cover : 1610649600
-AllocateAndMap: Start addr: 1610649600, end addr :1610653696
-Mapping memory for addrss :1610649600 
-looking if we have that address cover : 1610653696
-AllocateAndMap: Start addr: 1610653696, end addr :1610657792
-Mapping memory for addrss :1610653696 
-looking if we have that address cover : 1610657792
-AllocateAndMap: Start addr: 1610657792, end addr :1610661888
-Mapping memory for addrss :1610657792 
-looking if we have that address cover : 1610661888
-AllocateAndMap: Start addr: 1610661888, end addr :1610665984
-Mapping memory for addrss :1610661888 
-looking if we have that address cover : 1610665984
-AllocateAndMap: Start addr: 1610665984, end addr :1610670080
-Mapping memory for addrss :1610665984 
-looking if we have that address cover : 1610670080
-AllocateAndMap: Start addr: 1610670080, end addr :1610674176
-Mapping memory for addrss :1610670080 
-looking if we have that address cover : 1610674176
-AllocateAndMap: Start addr: 1610674176, end addr :1610678272
-Mapping memory for addrss :1610674176 
-looking if we have that address cover : 1610678272
-AllocateAndMap: Start addr: 1610678272, end addr :1610682368
-Mapping memory for addrss :1610678272 
-looking if we have that address cover : 1610682368
-AllocateAndMap: Start addr: 1610682368, end addr :1610686464
-Mapping memory for addrss :1610682368 
-looking if we have that address cover : 1610686464
-AllocateAndMap: Start addr: 1610686464, end addr :1610690560
-Mapping memory for addrss :1610686464 
-looking if we have that address cover : 1610690560
-AllocateAndMap: Start addr: 1610690560, end addr :1610694656
-Mapping memory for addrss :1610690560 
-looking if we have that address cover : 1610694656
-AllocateAndMap: Start addr: 1610694656, end addr :1610698752
-Mapping memory for addrss :1610694656 
-looking if we have that address cover : 1610698752
-AllocateAndMap: Start addr: 1610698752, end addr :1610702848
-Mapping memory for addrss :1610698752 
-looking if we have that address cover : 1610702848
-AllocateAndMap: Start addr: 1610702848, end addr :1610706944
-Mapping memory for addrss :1610702848 
-looking if we have that address cover : 1610706944
-AllocateAndMap: Start addr: 1610706944, end addr :1610711040
-Mapping memory for addrss :1610706944 
-looking if we have that address cover : 1610711040
-AllocateAndMap: Start addr
-AllocateAndMap: Start addr: 1610809344, end addr :1610813440
-Mapping memory for addrss :1610809344 
-looking if we have that address cover : 1610813440
-AllocateAndMap: Start addr: 1610813440, end addr :1610817536
-Mapping memory for addrss :1610813440 
-looking if we have that address cover : 1610817536
-AllocateAndMap: Start addr: 1610817536, end addr :1610821632
-Mapping memory for addrss :1610817536 
-looking if we have that address cover : 1610821632
-AllocateAndMap: Start addr: 1610821632, end addr :1610825728
-Mapping memory for addrss :1610821632 
-looking if we have that address cover : 1610825728
-AllocateAndMap: Start addr: 1610825728, end addr :1610829824
-Mapping memory for addrss :1610825728 
-looking if we have that address cover : 1610829824
-AllocateAndMap: Start addr: 1610829824, end addr :1610833920
-Mapping memory for addrss :1610829824 
-looking if we have that address cover : 1610833920
-AllocateAndMap: Start addr: 1610833920, end addr :1610838016
-Mapping memory for addrss :1610833920 
-looking if we have that address cover : 1610838016
-AllocateAndMap: Start addr: 1610838016, end addr :1610842112
-Mapping memory for addrss :1610838016 
-looking if we have that address cover : 1610842112
-AllocateAndMap: Start addr: 1610842112, end addr :1610846208
-Mapping memory for addrss :1610842112 
-looking if we have that address cover : 1610846208
-AllocateAndMap: Start addr: 1610846208, end addr :1610850304
-Mapping memory for addrss :1610846208 
-looking if we have that address cover : 1610850304
-AllocateAndMap: Start addr: 1610850304, end addr :1610854400
-Mapping memory for addrss :1610850304 
-looking if we have that address cover : 1610854400
-AllocateAndMap: Start addr: 1610854400, end addr :1610858496
-Mapping memory for addrss :1610854400 
-looking if we have that address cover : 1610858496
-AllocateAndMap: Start addr: 1610858496, end addr :1610862592
-Mapping memory for addrss :1610858496 
-looking if we have that address cover : 1610862592
-AllocateAndMap: Start addr: 1610862592, end 
-Mapping memory for addrss :1611309056 
-looking if we have that address cover : 1611313152
-AllocateAndMap: Start addr: 1611313152, end addr :1611317248
-Mapping memory for addrss :1611313152 
-looking if we have that address cover : 1611317248
-AllocateAndMap: Start addr: 1611317248, end addr :1611321344
-Mapping memory for addrss :1611317248 
-looking if we have that address cover : 1611321344
-AllocateAndMap: Start addr: 1611321344, end addr :1611325440
-Mapping memory for addrss :1611321344 
-looking if we have that address cover : 1611325440
-AllocateAndMap: Start addr: 1611325440, end addr :1611329536
-Mapping memory for addrss :1611325440 
-looking if we have that address cover : 1611329536
-AllocateAndMap: Start addr: 1611329536, end addr :1611333632
-Mapping memory for addrss :1611329536 
-looking if we have that address cover : 1611333632
-AllocateAndMap: Start addr: 1611333632, end addr :1611337728
-Mapping memory for addrss :1611333632 
-looking if we have that address cover : 1611337728
-AllocateAndMap: Start addr: 1611337728, end addr :1611341824
-Mapping memory for addrss :1611337728 
-looking if we have that address cover : 1611341824
-AllocateAndMap: Start addr: 1611341824, end addr :1611345920
-Mapping memory for addrss :1611341824 
-looking if we have that address cover : 1611345920
-AllocateAndMap: Start addr: 1611345920, end addr :1611350016
-Mapping memory for addrss :1611345920 
-looking if we have that address cover : 1611350016
-AllocateAndMap: Start addr: 1611350016, end addr :1611354112
-Mapping memory for addrss :1611350016 
-looking if we have that address cover : 1611354112
-AllocateAndMap: Start addr: 1611354112, end addr :1611358208
-Mapping memory for addrss :1611354112 
-looking if we have that address cover : 1611358208
-AllocateAndMap: Start addr: 1611358208, end addr :1611362304
-Mapping memory for addrss :1611358208 
-looking if we have that address cover : 1611362304
-AllocateAndMap: Start addr: 1611362304, end addr :1611366400
-Mapping memory for addrss :1611362304 
-look
-Mapping memory for addrss :1612042240 
-looking if we have that address cover : 1612046336
-AllocateAndMap: Start addr: 1612046336, end addr :1612050432
-Mapping memory for addrss :1612046336 
-looking if we have that address cover : 1612050432
-AllocateAndMap: Start addr: 1612050432, end addr :1612054528
-Mapping memory for addrss :1612050432 
-looking if we have that address cover : 1612054528
-AllocateAndMap: Start addr: 1612054528, end addr :1612058624
-Mapping memory for addrss :1612054528 
-looking if we have that address cover : 1612058624
-AllocateAndMap: Start addr: 1612058624, end addr :1612062720
-Mapping memory for addrss :1612058624 
-looking if we have that address cover : 1612062720
-AllocateAndMap: Start addr: 1612062720, end addr :1612066816
-Mapping memory for addrss :1612062720 
-looking if we have that address cover : 1612066816
-AllocateAndMap: Start addr: 1612066816, end addr :1612070912
-Mapping memory for addrss :1612066816 
-looking if we have that address cover : 1612070912
-AllocateAndMap: Start addr: 1612070912, end addr :1612075008
-Mapping memory for addrss :1612070912 
-looking if we have that address cover : 1612075008
-AllocateAndMap: Start addr: 1612075008, end addr :1612079104
-Mapping memory for addrss :1612075008 
-looking if we have that address cover : 1612079104
-AllocateAndMap: Start addr: 1612079104, end addr :1612083200
-Mapping memory for addrss :1612079104 
-looking if we have that address cover : 1612083200
-AllocateAndMap: Start addr: 1612083200, end addr :1612087296
-Mapping memory for addrss :1612083200 
-looking if we have that address cover : 1612087296
-AllocateAndMap: Start addr: 1612087296, end addr :1612091392
-Mapping memory for addrss :1612087296 
-looking if we have that address cover : 1612091392
-AllocateAndMap: Start addr: 1612091392, end addr :1612095488
-Mapping memory for addrss :1612091392 
-looking if we have that address cover : 1612095488
-AllocateAndMap: Start addr: 1612095488, end addr :1612099584
-Mapping memory for addrss :1612095488 
-look Traceback (most recent call last):
-  File "/home/siong/private/cs537/p5/tests/testing/pexpect.py", line 1377, in expect_loop
-    c = self.read_nonblocking (self.maxread, timeout)
-  File "/home/siong/private/cs537/p5/tests/testing/pexpect.py", line 824, in read_nonblocking
-    raise TIMEOUT ('Timeout exceeded in read_nonblocking().')
-testing.pexpect.TIMEOUT: Timeout exceeded in read_nonblocking().
+	Accessed Map 1. 	Okay.
+	Accessed Map 2. 	Okay.
+	Accessed Map 3. 	Okay.
+	Accessed Map 4. 	Okay.
+	Accessed Map 5. 	Okay.
+	Accessed Map 6. 	Okay.
+	Accessed Map 7. 	Okay.
+	Accessed Map 8. 	Okay.
+	Accessed Map 9. 	Okay.
+	Accessed Map 10. 	Okay.
+	Accessed Map 11. 	Okay.
+	Accessed Map 12. 	Okay.
+	Accessed Map 13. 	Okay.
+	Accessed Map 14. 	Okay.
+	Accessed Map 15. 	Okay.
+	Accessed Map 16. 	Okay.
+INFO: Accessed all pages of Map 1 ~ 16. 	Okay.
+	Map 1 is allocated. 	Okay.
+	Map 2 is allocated. 	Okay.
+	Map 3 is allocated. 	Okay.
+	Map 4 is allocated. 	Okay.
+	Map 5 is allocated. 	Okay.
+	Map 6 is allocated. 	Okay.
+	Map 7 is allocated. 	Okay.
+	Map 8 is allocated. 	Okay.
+	Map 9 is allocated. 	Okay.
+	Map 10 is allocated. 	Okay.
+	Map 11 is allocated. 	Okay.
+	Map 12 is allocated. 	Okay.
+	Map 13 is allocated. 	Okay.
+	Map 14 is allocated. 	Okay.
+	Map 15 is allocated. 	Okay.
+	Map 16 is allocated. 	Okay.
+INFO: All pages of Map 1 ~ 16 are allocated. 	Okay.
+[0;32mSUCCESS:[0m TEST_8	 PASSED
 
-During handling of the above exception, another exception occurred:
+$ 
 
-NameError: name 'e' is not defined
-
-
-test test_8 FAILED (0 of 1)
+test test_8 PASSED (1 of 1)
  (MAP+STRESS: Places a large number of maps and accesses all pages of each map)
- Unexpected exception name 'e' is not defined
 
-Skipped 17 tests.
+starting test_9
+
+**********************************************************************
+
+Test test_9
+MAP+LAZY: Checks for lazy allocation in anon mapping
+
+**********************************************************************
+Running xv6 user progam /home/siong/private/cs537/p5/tests/ctests/test_9.c
+DEBUG: Copying header file to project path
+Trying to build project using make
+make xv6.img fs.img
+/tmp/tmpkk9ffeh9/p/Makefile
+/tmp/tmpkk9ffeh9/p/Makefile.test
+make: 'xv6.img' is up to date.
+make: 'fs.img' is up to date.
+make qemu-nox CPUS=1
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o tester.o tester.c
+ld -m    elf_i386 -N -e main -Ttext 0 -o _tester tester.o ulib.o usys.o printf.o umalloc.o
+objdump -S _tester > tester.asm
+objdump -t _tester | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > tester.sym
+./mkfs fs.img README _cat _echo _forktest _grep _init _kill _ln _ls _tester _mkdir _rm _sh _stressfs _usertests _wc _zombie _t12test _mappingtest 
+nmeta 59 (boot, super, log blocks 30 inode blocks 26, bitmap blocks 1) blocks 941 total 1000
+balloc: first 762 blocks have been allocated
+balloc: write bitmap block at sector 58
+qemu-system-i386 -nographic -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp 1 -m 512 
+c[?7l[2J[0mSeaBIOS (version 1.15.0-1)
+
+
+iPXE (https://ipxe.org) 00:03.0 CA00 PCI2.10 PnP PMM+1FF8B4A0+1FECB4A0 CA00
+Press Ctrl-B to configure iPXE (PCI 00:03.0)...                                                                               
+
+
+Booting from Hard Disk..xv6...
+cpu0: starting 0
+sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ tester
+tester
+
+
+TEST_9
+INFO: Initially 0 maps. 	Okay.
+INFO: Map 1 at 0x60000000 with length 0x3000. 	Okay.
+INFO: No page have entry in pgdir yet. 	Okay.
+INFO: Accessed second page. 	Okay.
+INFO: First page is not allocated. 	Okay.
+INFO: Second page is allocated. 	Okay.
+INFO: Third page is not allocated. 	Okay.
+[0;32mSUCCESS:[0m TEST_9	 PASSED
+
+$ 
+
+test test_9 PASSED (1 of 1)
+ (MAP+LAZY: Checks for lazy allocation in anon mapping)
+
+starting test_10
+
+**********************************************************************
+
+Test test_10
+MAP+LAZY: Checks for lazy allocation in filebacked mapping
+
+**********************************************************************
+Running xv6 user progam /home/siong/private/cs537/p5/tests/ctests/test_10.c
+DEBUG: Copying header file to project path
+Trying to build project using make
+make xv6.img fs.img
+/tmp/tmpkk9ffeh9/p/Makefile
+/tmp/tmpkk9ffeh9/p/Makefile.test
+make: 'xv6.img' is up to date.
+make: 'fs.img' is up to date.
+make qemu-nox CPUS=1
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o tester.o tester.c
+ld -m    elf_i386 -N -e main -Ttext 0 -o _tester tester.o ulib.o usys.o printf.o umalloc.o
+objdump -S _tester > tester.asm
+objdump -t _tester | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > tester.sym
+./mkfs fs.img README _cat _echo _forktest _grep _init _kill _ln _ls _tester _mkdir _rm _sh _stressfs _usertests _wc _zombie _t12test _mappingtest 
+nmeta 59 (boot, super, log blocks 30 inode blocks 26, bitmap blocks 1) blocks 941 total 1000
+balloc: first 765 blocks have been allocated
+balloc: write bitmap block at sector 58
+qemu-system-i386 -nographic -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp 1 -m 512 
+c[?7l[2J[0mSeaBIOS (version 1.15.0-1)
+
+
+iPXE (https://ipxe.org) 00:03.0 CA00 PCI2.10 PnP PMM+1FF8B4A0+1FECB4A0 CA00
+Press Ctrl-B to configure iPXE (PCI 00:03.0)...                                                                               
+
+
+Booting from Hard Disk..xv6...
+cpu0: starting 0
+sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ tester
+tester
+
+
+TEST_10
+INFO: Initially 0 maps. 	Okay.
+INFO: 111
+INFO: 112
+INFO: 113
+INFO: Created file bigfile with length 12288 bytes. 	Okay.
+INFO: Created file smallfile with length 512 bytes. 	Okay.
+INFO: Map 1 at 0x60000000 with length 0x3000. 	Okay.
+INFO: Map 2 at 0x60004000 with length 0x200. 	Okay.
+INFO: n_loaded_pages zero. 	Okay.
+INFO: No page have entry in pgdir yet. 	Okay.
+INFO: Accessed second page. 	Okay.
+INFO: SmallMap first page is allocated. 	Okay.
+INFO: BigMap first page is NOT allocated. 	Okay.
+INFO: BigMap second page is allocated. 	Okay.
+INFO: Bigmap third page is NOT allocated. 	Okay.
+[0;32mSUCCESS:[0m TEST_10	 PASSED
+
+$ 
+
+test test_10 PASSED (1 of 1)
+ (MAP+LAZY: Checks for lazy allocation in filebacked mapping)
+
+starting test_11
+
+**********************************************************************
+
+Test test_11
+MAP+LAZY+STRESS: Checks for lazy allocation in filebacked mapping
+
+**********************************************************************
+Running xv6 user progam /home/siong/private/cs537/p5/tests/ctests/test_11.c
+DEBUG: Copying header file to project path
+Trying to build project using make
+make xv6.img fs.img
+/tmp/tmpkk9ffeh9/p/Makefile
+/tmp/tmpkk9ffeh9/p/Makefile.test
+make: 'xv6.img' is up to date.
+make: 'fs.img' is up to date.
+make qemu-nox CPUS=1
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o tester.o tester.c
+ld -m    elf_i386 -N -e main -Ttext 0 -o _tester tester.o ulib.o usys.o printf.o umalloc.o
+objdump -S _tester > tester.asm
+objdump -t _tester | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > tester.sym
+./mkfs fs.img README _cat _echo _forktest _grep _init _kill _ln _ls _tester _mkdir _rm _sh _stressfs _usertests _wc _zombie _t12test _mappingtest 
+nmeta 59 (boot, super, log blocks 30 inode blocks 26, bitmap blocks 1) blocks 941 total 1000
+balloc: first 763 blocks have been allocated
+balloc: write bitmap block at sector 58
+qemu-system-i386 -nographic -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp 1 -m 512 
+c[?7l[2J[0mSeaBIOS (version 1.15.0-1)
+
+
+iPXE (https://ipxe.org) 00:03.0 CA00 PCI2.10 PnP PMM+1FF8B4A0+1FECB4A0 CA00
+Press Ctrl-B to configure iPXE (PCI 00:03.0)...                                                                               
+
+
+Booting from Hard Disk..xv6...
+cpu0: starting 0
+sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ tester
+tester
+
+
+TEST_11
+INFO: Initially 0 maps. 	Okay.
+INFO: Map 1 at 0x60000000 with length 0x11170000. 	Okay.
+INFO: No page have entry in pgdir yet. 	Okay.
+INFO: Accessed second page. 	Okay.
+INFO: First page is not allocated. 	Okay.
+INFO: Second page is allocated. 	Okay.
+INFO: Third to last pages are not allocated. 	Okay.
+[0;32mSUCCESS:[0m TEST_11	 PASSED
+
+$ 
+
+test test_11 PASSED (1 of 1)
+ (MAP+LAZY+STRESS: Checks for lazy allocation in filebacked mapping)
+
+starting test_12
+
+**********************************************************************
+
+Test test_12
+UNMAP: Unmap a anonymous map
+
+**********************************************************************
+Running xv6 user progam /home/siong/private/cs537/p5/tests/ctests/test_12.c
+DEBUG: Copying header file to project path
+Trying to build project using make
+make xv6.img fs.img
+/tmp/tmpkk9ffeh9/p/Makefile
+/tmp/tmpkk9ffeh9/p/Makefile.test
+make: 'xv6.img' is up to date.
+make: 'fs.img' is up to date.
+make qemu-nox CPUS=1
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o tester.o tester.c
+ld -m    elf_i386 -N -e main -Ttext 0 -o _tester tester.o ulib.o usys.o printf.o umalloc.o
+objdump -S _tester > tester.asm
+objdump -t _tester | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > tester.sym
+./mkfs fs.img README _cat _echo _forktest _grep _init _kill _ln _ls _tester _mkdir _rm _sh _stressfs _usertests _wc _zombie _t12test _mappingtest 
+nmeta 59 (boot, super, log blocks 30 inode blocks 26, bitmap blocks 1) blocks 941 total 1000
+balloc: first 761 blocks have been allocated
+balloc: write bitmap block at sector 58
+qemu-system-i386 -nographic -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp 1 -m 512 
+c[?7l[2J[0mSeaBIOS (version 1.15.0-1)
+
+
+iPXE (https://ipxe.org) 00:03.0 CA00 PCI2.10 PnP PMM+1FF8B4A0+1FECB4A0 CA00
+Press Ctrl-B to configure iPXE (PCI 00:03.0)...                                                                               
+
+
+Booting from Hard Disk..xv6...
+cpu0: starting 0
+sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ tester
+tester
+
+
+TEST_12
+INFO: Initially 0 maps. 	Okay.
+INFO: Map 1 at 0x60002000 with length 0x4008. 	Okay.
+INFO: Map 1 unmapped. 	Okay.
+[0;32mSUCCESS:[0m TEST_12	 PASSED
+
+$ 
+
+test test_12 PASSED (1 of 1)
+ (UNMAP: Unmap a anonymous map)
+
+starting test_13
+
+**********************************************************************
+
+Test test_13
+UNMAP: Unmaps a filebacked map
+
+**********************************************************************
+Running xv6 user progam /home/siong/private/cs537/p5/tests/ctests/test_13.c
+DEBUG: Copying header file to project path
+Trying to build project using make
+make xv6.img fs.img
+/tmp/tmpkk9ffeh9/p/Makefile
+/tmp/tmpkk9ffeh9/p/Makefile.test
+make: 'xv6.img' is up to date.
+make: 'fs.img' is up to date.
+make qemu-nox CPUS=1
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o tester.o tester.c
+ld -m    elf_i386 -N -e main -Ttext 0 -o _tester tester.o ulib.o usys.o printf.o umalloc.o
+objdump -S _tester > tester.asm
+objdump -t _tester | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > tester.sym
+./mkfs fs.img README _cat _echo _forktest _grep _init _kill _ln _ls _tester _mkdir _rm _sh _stressfs _usertests _wc _zombie _t12test _mappingtest 
+nmeta 59 (boot, super, log blocks 30 inode blocks 26, bitmap blocks 1) blocks 941 total 1000
+balloc: first 761 blocks have been allocated
+balloc: write bitmap block at sector 58
+qemu-system-i386 -nographic -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp 1 -m 512 
+c[?7l[2J[0mSeaBIOS (version 1.15.0-1)
+
+
+iPXE (https://ipxe.org) 00:03.0 CA00 PCI2.10 PnP PMM+1FF8B4A0+1FECB4A0 CA00
+Press Ctrl-B to configure iPXE (PCI 00:03.0)...                                                                               
+
+
+Booting from Hard Disk..xv6...
+cpu0: starting 0
+sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ tester
+tester
+
+
+TEST_13
+INFO: Initially 0 maps. 	Okay.
+INFO: Created file small.txt with length 512 bytes. 	Okay.
+INFO: Map 1 at 0x6002F000 with length 0x200. 	Okay.
+We should perform a write-back here
+INFO: Map 1 unmapped. 	Okay.
+[0;32mSUCCESS:[0m TEST_13	 PASSED
+
+$ 
+
+test test_13 PASSED (1 of 1)
+ (UNMAP: Unmaps a filebacked map)
+
+starting test_14
+
+**********************************************************************
+
+Test test_14
+UNMAP+DEALLOC: Unmap accessed anonymous map and check for memory deallocation
+
+**********************************************************************
+Running xv6 user progam /home/siong/private/cs537/p5/tests/ctests/test_14.c
+DEBUG: Copying header file to project path
+Trying to build project using make
+make xv6.img fs.img
+/tmp/tmpkk9ffeh9/p/Makefile
+/tmp/tmpkk9ffeh9/p/Makefile.test
+make: 'xv6.img' is up to date.
+make: 'fs.img' is up to date.
+make qemu-nox CPUS=1
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o tester.o tester.c
+ld -m    elf_i386 -N -e main -Ttext 0 -o _tester tester.o ulib.o usys.o printf.o umalloc.o
+objdump -S _tester > tester.asm
+objdump -t _tester | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > tester.sym
+./mkfs fs.img README _cat _echo _forktest _grep _init _kill _ln _ls _tester _mkdir _rm _sh _stressfs _usertests _wc _zombie _t12test _mappingtest 
+nmeta 59 (boot, super, log blocks 30 inode blocks 26, bitmap blocks 1) blocks 941 total 1000
+balloc: first 762 blocks have been allocated
+balloc: write bitmap block at sector 58
+qemu-system-i386 -nographic -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp 1 -m 512 
+c[?7l[2J[0mSeaBIOS (version 1.15.0-1)
+
+
+iPXE (https://ipxe.org) 00:03.0 CA00 PCI2.10 PnP PMM+1FF8B4A0+1FECB4A0 CA00
+Press Ctrl-B to configure iPXE (PCI 00:03.0)...                                                                               
+
+
+Booting from Hard Disk..xv6...
+cpu0: starting 0
+sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ tester
+tester
+
+
+TEST_14
+INFO: Initially 0 maps. 	Okay.
+INFO: Map 1 at 0x60002000 with length 8292. 	Okay.
+INFO: Accessed all pages of Map 1. 	Okay.
+INFO: Map 1 unmapped. 	Okay.
+INFO: Unmapped pages are deallocated. 	Okay.
+[0;32mSUCCESS:[0m TEST_14	 PASSED
+
+$ 
+
+test test_14 PASSED (1 of 1)
+ (UNMAP+DEALLOC: Unmap accessed anonymous map and check for memory deallocation)
+
+starting test_15
+
+**********************************************************************
+
+Test test_15
+UNMAP+DEALLOC: Unmap an accessed filebacked map and check for memory deallocation
+
+**********************************************************************
+Running xv6 user progam /home/siong/private/cs537/p5/tests/ctests/test_15.c
+DEBUG: Copying header file to project path
+Trying to build project using make
+make xv6.img fs.img
+/tmp/tmpkk9ffeh9/p/Makefile
+/tmp/tmpkk9ffeh9/p/Makefile.test
+make: 'xv6.img' is up to date.
+make: 'fs.img' is up to date.
+make qemu-nox CPUS=1
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o tester.o tester.c
+ld -m    elf_i386 -N -e main -Ttext 0 -o _tester tester.o ulib.o usys.o printf.o umalloc.o
+objdump -S _tester > tester.asm
+objdump -t _tester | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > tester.sym
+./mkfs fs.img README _cat _echo _forktest _grep _init _kill _ln _ls _tester _mkdir _rm _sh _stressfs _usertests _wc _zombie _t12test _mappingtest 
+nmeta 59 (boot, super, log blocks 30 inode blocks 26, bitmap blocks 1) blocks 941 total 1000
+balloc: first 764 blocks have been allocated
+balloc: write bitmap block at sector 58
+qemu-system-i386 -nographic -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp 1 -m 512 
+c[?7l[2J[0mSeaBIOS (version 1.15.0-1)
+
+
+iPXE (https://ipxe.org) 00:03.0 CA00 PCI2.10 PnP PMM+1FF8B4A0+1FECB4A0 CA00
+Press Ctrl-B to configure iPXE (PCI 00:03.0)...                                                                               
+
+
+Booting from Hard Disk..xv6...
+cpu0: starting 0
+sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ tester
+tester
+
+
+TEST_15
+INFO: Initially 0 maps. 	Okay.
+INFO: 113
+INFO: 114
+INFO: 115
+INFO: 116
+INFO: 117
+INFO: Created file big.txt with length 20480 bytes. 	Okay.
+INFO: Placed map 1 at 0x60000000 with length 20480. 	Okay.
+INFO: Accessed all pages of Map 1. 	Okay.
+We should perform a write-back here
+INFO: Map 1 unmapped. 	Okay.
+INFO: Unmapped pages are deallocated. 	Okay.
+[0;32mSUCCESS:[0m TEST_15	 PASSED
+
+$ 
+
+test test_15 PASSED (1 of 1)
+ (UNMAP+DEALLOC: Unmap an accessed filebacked map and check for memory deallocation)
+
+starting test_16
+
+**********************************************************************
+
+Test test_16
+UNMAP: Edit a filebacked map and verify its changes are reflected
+
+**********************************************************************
+Running xv6 user progam /home/siong/private/cs537/p5/tests/ctests/test_16.c
+DEBUG: Copying header file to project path
+Trying to build project using make
+make xv6.img fs.img
+/tmp/tmpkk9ffeh9/p/Makefile
+/tmp/tmpkk9ffeh9/p/Makefile.test
+make: 'xv6.img' is up to date.
+make: 'fs.img' is up to date.
+make qemu-nox CPUS=1
+gcc -fno-pic -static -fno-builtin -fno-strict-aliasing -O2 -Wall -MD -ggdb -m32 -Werror -fno-omit-frame-pointer -fno-stack-protector -fno-pie -no-pie   -c -o tester.o tester.c
+ld -m    elf_i386 -N -e main -Ttext 0 -o _tester tester.o ulib.o usys.o printf.o umalloc.o
+objdump -S _tester > tester.asm
+objdump -t _tester | sed '1,/SYMBOL TABLE/d; s/ .* / /; /^$/d' > tester.sym
+./mkfs fs.img README _cat _echo _forktest _grep _init _kill _ln _ls _tester _mkdir _rm _sh _stressfs _usertests _wc _zombie _t12test _mappingtest 
+nmeta 59 (boot, super, log blocks 30 inode blocks 26, bitmap blocks 1) blocks 941 total 1000
+balloc: first 766 blocks have been allocated
+balloc: write bitmap block at sector 58
+qemu-system-i386 -nographic -drive file=fs.img,index=1,media=disk,format=raw -drive file=xv6.img,index=0,media=disk,format=raw -smp 1 -m 512 
+c[?7l[2J[0mSeaBIOS (version 1.15.0-1)
+
+
+iPXE (https://ipxe.org) 00:03.0 CA00 PCI2.10 PnP PMM+1FF8B4A0+1FECB4A0 CA00
+Press Ctrl-B to configure iPXE (PCI 00:03.0)...                                                                               
+
+
+Booting from Hard Disk..xv6...
+cpu0: starting 0
+sb: size 1000 nblocks 941 ninodes 200 nlog 30 logstart 2 inodestart 32 bmap start 58
+init: starting sh
+$ tester
+tester
+
+
+TEST_16
+INFO: Initially 0 maps. 	Okay.
+INFO: 113
+INFO: 114
+INFO: 115
+INFO: 116
+INFO: 117
+INFO: Created file big.txt with length 20480 bytes. 	Okay.
+INFO: Placed map 1 at 0x60000000 with length 20480. 	Okay.
+INFO: Accessed all pages of Map 1. 	Okay.
+We should perform a write-back here
+Map 1 unmapped. 	Okay.
+Unmapped pages are deallocated. 	Okay.
+file big.txt offset 0 = 113, expected 75
+
+[0;31mFAIL:[0m TEST_16	 FAILED (pid 3)
+
+$ 
+Cleaning up after failure
+Trying to clean project using make clean
+make clean
+rm -f *.tex *.dvi *.idx *.aux *.log *.ind *.ilg \
+*.o *.d *.asm *.sym vectors.S bootblock entryother \
+initcode initcode.out kernel xv6.img fs.img kernelmemfs \
+xv6memfs.img mkfs .gdbinit \
+_cat _echo _forktest _grep _init _kill _ln _ls _mkdir _rm _sh _stressfs _usertests _wc _zombie _t12test _mappingtest 
+
+
+test test_16 FAILED (0 of 1)
+ (UNMAP: Edit a filebacked map and verify its changes are reflected)
+ tester failed
+
+Skipped 9 tests.
 To keep testing after failing a test, use flag '-c' or '--continue'
