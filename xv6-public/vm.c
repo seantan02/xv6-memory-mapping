@@ -17,6 +17,9 @@ pde_t *kpgdir;  // for use in scheduler()
 // fileseek and fileread
 extern int fileread(struct file *f, char *addr, int n);
 
+// static array
+static unsigned char cow_ref_counts[PHYSTOP/PGSIZE];
+
 // Set up CPU's kernel segment descriptors.
 // Run once on entry on each CPU.
 void
@@ -485,7 +488,7 @@ int allocateAndMap(struct proc *p, uint addr, int length, int i){
   struct file *f;
   char *mem;
   uint a = PGROUNDDOWN(addr);
-  uint endAddr = a + length; 
+  uint endAddr = a + PGROUNDUP(length); 
 
   if(endAddr >= KERNBASE)  // over the range
 	return -1;
@@ -576,6 +579,105 @@ This function dellocate physical page for a process mapping and remove it. If MA
    // no error
    return SUCCESS;
  }
+
+
+int
+copyWmap(struct proc *parent, struct proc *child)
+{ 
+   // no parent or no child
+   if(parent == 0 || child == 0) return 0;
+   
+   // all variables we need
+   uint addr;
+   int length;
+   
+   // go through the wmap mappings and copy over
+   for(int i=0; i < MAX_WMMAP_INFO; i++){
+     addr = ((parent->wmapInfo).addr)[i];
+     length = ((parent->wmapInfo).length)[i];
+     // skip if empty
+     if(addr == 0 && length == -1) continue;
+     // copy if it exists
+     pte_t *pte; 
+     uint a, pa, perm;
+     a = addr;
+     
+	// loop through the address with the length and copy over the physical page
+     for(; a < (addr+PGROUNDUP(length)); a += PGSIZE){
+       pte = walkpgdir(parent->pgdir, (char*)a, 0);
+       if(!pte) continue;
+       else if((*pte & PTE_P) != 0){
+         pa = PTE_ADDR(*pte);
+         if(pa == 0) panic("copyWmap: kfree");
+         perm = PTE_FLAGS(*pte);
+         if(mappages(child->pgdir, (char*)a, PGSIZE, pa, perm) < 0){
+           cprintf("COPYWMAP: Failed!\n");
+           return FAILED;
+         }
+       }
+     }
+     // update child mapping details
+     if(updateWmap(child, addr, ((parent->wmapInfo).length)[i], ((parent->wmapInfo).n_loaded_pages)[i], ((parent->wmapInfoExtra).file_backed)[i],
+                     ((parent->wmapInfoExtra).fd)[i], (parent->wmapInfo).total_mmaps, i) != 0){
+       return -1;
+     }
+   }
+   return 0;
+ }
+
+
+// COPY ON WRITE
+int
+duplicatePage(struct proc *p, uint addr, int length, int i)
+{
+ /**
+ for a given addr and length, we will duplicate it for process A and make it writable. Then set COW-bit to 0.
+ - We will round the addr down using PGROUNDDOWN and length by PGROUNDUP
+ */
+   char *mem;
+   uint a = PGROUNDDOWN(addr);
+   uint endAddr = a + PGROUNDUP(length);
+   
+   if(endAddr >= KERNBASE)  // over the range
+     return -1;
+   
+   pte_t *pte;
+   uint pa, pfn;
+   
+   for(; a < endAddr; a += PGSIZE){
+     mem = kalloc();
+     if(mem == 0){
+       cprintf("MMAP out of memory\n"); 
+       dellocateAndUnmap(p, endAddr, a, i); // deallocate
+       return FAILED;
+     }
+     // retrieve the physical page and then copy over content
+     pte = walkpgdir(p->pgdir, (char*)a, 0);
+     if(!pte) panic("DUPLICATEPAGE: PTE should exist!\n");
+     else if((*pte & PTE_P) != 0){
+       pa = PTE_ADDR(*pte);
+       if(DEBUG) cprintf("DUPLICATEPAGE: physical addr found: %d\n", pa);
+       if(pa == 0) panic("DUPLICATEPAGE: kfree");
+       memmove(mem, (char*)P2V(pa), PGSIZE);  // copy content over
+       if(mappages(p->pgdir, (char*)a, PGSIZE, V2P(mem), PTE_W | PTE_U | PTE_P) < 0){
+         cprintf("MMAP out of memory (2)\n");
+         kfree(mem);
+         dellocateAndUnmap(p, endAddr, a, i); // deallocate
+         return -1;
+       }
+       pfn = PPN(pa);
+       cow_ref_counts[pfn]--;
+       cow_ref_counts[PPN(V2P(mem))] = 1; // we have just this process
+     }
+   }
+   return SUCCESS;
+}
+ 
+int
+get_cow_ref_counts(uint pa)
+{
+   return cow_ref_counts[PPN(pa)];
+}
 
 
 /**
