@@ -145,7 +145,7 @@ sys_va2pa(void)
 {
   uint va;
 
-  if(argint(0, (int *) &va) < 0) return FAILED;
+  if(argint(0, (int *) &va) < 0) return -1;
   if(DEBUG) cprintf("SYS_VA2PA: Made it after argint and proceed va2pa call.\n");
 
   return va2pa(va);

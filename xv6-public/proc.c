@@ -18,6 +18,9 @@ int nextpid = 1;
 extern void forkret(void);
 extern void trapret(void);
 
+// debug
+extern int DEBUG;
+
 static void wakeup1(void *chan);
 
 void
@@ -227,6 +230,17 @@ fork(void)
 
   release(&ptable.lock);
 
+  // copy over WMAP
+  if(copyWmap(curproc, np) != 0){
+	if(DEBUG) cprintf("FORK: COPYWMAP failed!\n");
+	kfree(np->kstack);
+	np->kstack = 0;
+	np->state = UNUSED;
+	return -1;
+  }
+
+  if(DEBUG) printWmap(np);
+
   return pid;
 }
 
@@ -242,6 +256,16 @@ exit(void)
 
   if(curproc == initproc)
     panic("init exiting");
+
+  uint addr, length;
+  // unmap everything when exit
+  for(int i=0; i < MAX_WMMAP_INFO; i++){
+	addr = ((curproc->wmapInfo).addr)[i];
+	length = ((curproc->wmapInfo).length)[i];
+	if(addr == 0 && length == -1) continue;
+	wunmap(addr);  // unmap the address
+  }
+
 
   // Close all open files.
   for(fd = 0; fd < NOFILE; fd++){

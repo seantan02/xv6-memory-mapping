@@ -33,6 +33,7 @@ int dellocateAndUnmap(struct proc *p, uint addr, int length, int i);
 void printWmap(struct proc *p);
 int duplicateFd(int fd);
 int allocateAndMap(struct proc *p, uint addr, int length, int i);
+int copyWmap(struct proc *parent, struct proc *child);
 uint wmap(uint addr, int length, int flags, int fd);
 int wunmap(uint addr);
 uint va2pa(uint va);

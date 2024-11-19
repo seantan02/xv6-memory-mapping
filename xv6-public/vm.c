@@ -578,6 +578,51 @@ This function dellocate physical page for a process mapping and remove it. If MA
  }
 
 
+ int
+ copyWmap(struct proc *parent, struct proc *child)
+ { 
+   // no parent or no child
+   if(parent == 0 || child == 0) return 0;
+   
+   // all variables we need
+   uint addr;
+   int length;
+   
+   // go through the wmap mappings and copy over
+   for(int i=0; i < MAX_WMMAP_INFO; i++){
+     addr = ((parent->wmapInfo).addr)[i];
+     length = ((parent->wmapInfo).length)[i];
+     // skip if empty
+     if(addr == 0 && length == -1) continue;
+     // copy if it exists
+     pte_t *pte; 
+     uint a, pa, perm;
+     a = addr;
+     length = PGROUNDUP(length);  // round up length
+     // loop through the address with the length and copy over the physical page
+     for(; a < (addr+length); a += PGSIZE){
+       pte = walkpgdir(parent->pgdir, (char*)a, 0);
+       if(!pte) continue;
+       else if((*pte & PTE_P) != 0){
+         pa = PTE_ADDR(*pte);
+         if(pa == 0) panic("copyWmap: kfree");
+         perm = PTE_FLAGS(*pte);
+         if(mappages(child->pgdir, (char*)a, PGSIZE, pa, perm) < 0){
+           cprintf("COPYWMAP: Failed!\n");
+           return FAILED;
+         }
+       }
+     }
+     // update child mapping details
+     if(updateWmap(child, addr, ((parent->wmapInfo).length)[i], ((parent->wmapInfo).n_loaded_pages)[i], ((parent->wmapInfoExtra).file_backed)[i],
+                     ((parent->wmapInfoExtra).fd)[i], (parent->wmapInfo).total_mmaps, i) != 0){
+       return -1;
+     }
+   }
+   return 0;
+ }
+
+
 /**
 Actual syscall functions are below
 */
