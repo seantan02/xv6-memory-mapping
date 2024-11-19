@@ -18,7 +18,8 @@ pde_t *kpgdir;  // for use in scheduler()
 extern int fileread(struct file *f, char *addr, int n);
 
 // static array
-static unsigned char cow_ref_counts[PHYSTOP/PGSIZE];
+unsigned char ref_counts[4 * 1024 * 1024 / PGSIZE];
+struct spinlock ref_count_lock;
 
 // Set up CPU's kernel segment descriptors.
 // Run once on entry on each CPU.
@@ -307,7 +308,9 @@ freevm(pde_t *pgdir)
   for(i = 0; i < NPDENTRIES; i++){
     if(pgdir[i] & PTE_P){
       char * v = P2V(PTE_ADDR(pgdir[i]));
-      kfree(v);
+	  if(dec_page_ref((uint)v)) {
+        kfree(v);
+      }
     }
   }
   kfree((char*)pgdir);
@@ -334,7 +337,6 @@ copyuvm(pde_t *pgdir, uint sz)
   pde_t *d;
   pte_t *pte;
   uint pa, i, flags;
-  char *mem;
 
   if((d = setupkvm()) == 0)
     return 0;
@@ -345,13 +347,17 @@ copyuvm(pde_t *pgdir, uint sz)
       panic("copyuvm: page not present");
     pa = PTE_ADDR(*pte);
     flags = PTE_FLAGS(*pte);
-    if((mem = kalloc()) == 0)
-      goto bad;
-    memmove(mem, (char*)P2V(pa), PGSIZE);
-    if(mappages(d, (void*)i, PGSIZE, V2P(mem), flags) < 0) {
-      kfree(mem);
+	// modification for COW:
+	// Mark it as COW if it's writable and then map it to the same page in child
+    if(flags & PTE_W){
+	  flags &= ~PTE_W;
+	  flags |= PTE_COW;
+	  *pte = (*pte & ~PTE_W) | PTE_COW;
+	}
+    if(mappages(d, (void*)i, PGSIZE, pa, flags) < 0) {
       goto bad;
     }
+	inc_page_ref(pa);
   }
   return d;
 
@@ -628,57 +634,139 @@ copyWmap(struct proc *parent, struct proc *child)
 
 // COPY ON WRITE
 int
-duplicatePage(struct proc *p, uint addr, int length, int i)
+duplicatePage(struct proc *p, uint addr, int length)
 {
  /**
  for a given addr and length, we will duplicate it for process A and make it writable. Then set COW-bit to 0.
  - We will round the addr down using PGROUNDDOWN and length by PGROUNDUP
  */
-   char *mem;
-   uint a = PGROUNDDOWN(addr);
-   uint endAddr = a + PGROUNDUP(length);
+  if (DEBUG) cprintf("duplicatePage: called with addr: %x, length: %d\n", addr, length);
+  char *mem;
+  uint a = PGROUNDDOWN(addr);
+  uint endAddr = a + PGROUNDUP(length);
+ 
+  if(endAddr >= KERNBASE){  // over the range
+    if (DEBUG) cprintf("duplicatePage: address out of range, endAddr: %x\n", endAddr);
+	return -1;
+  }
    
-   if(endAddr >= KERNBASE)  // over the range
-     return -1;
-   
-   pte_t *pte;
-   uint pa, pfn;
-   
-   for(; a < endAddr; a += PGSIZE){
-     mem = kalloc();
-     if(mem == 0){
-       cprintf("MMAP out of memory\n"); 
-       dellocateAndUnmap(p, endAddr, a, i); // deallocate
-       return FAILED;
-     }
-     // retrieve the physical page and then copy over content
-     pte = walkpgdir(p->pgdir, (char*)a, 0);
-     if(!pte) panic("DUPLICATEPAGE: PTE should exist!\n");
-     else if((*pte & PTE_P) != 0){
-       pa = PTE_ADDR(*pte);
-       if(DEBUG) cprintf("DUPLICATEPAGE: physical addr found: %d\n", pa);
-       if(pa == 0) panic("DUPLICATEPAGE: kfree");
-       memmove(mem, (char*)P2V(pa), PGSIZE);  // copy content over
-       if(mappages(p->pgdir, (char*)a, PGSIZE, V2P(mem), PTE_W | PTE_U | PTE_P) < 0){
-         cprintf("MMAP out of memory (2)\n");
-         kfree(mem);
-         dellocateAndUnmap(p, endAddr, a, i); // deallocate
-         return -1;
-       }
-       pfn = PPN(pa);
-       cow_ref_counts[pfn]--;
-       cow_ref_counts[PPN(V2P(mem))] = 1; // we have just this process
-     }
-   }
-   return SUCCESS;
+  pte_t *pte;
+  uint pa, perm;   
+
+  for(; a < endAddr; a += PGSIZE){
+    mem = kalloc();
+    if(mem == 0){
+      cprintf("MMAP out of memory\n"); 
+      return -1;
+    }
+	if (DEBUG) cprintf("duplicatePage: allocated new page at %x for address %x\n", V2P(mem), a);
+    // retrieve the physical page and then copy over content
+    pte = walkpgdir(p->pgdir, (char*)a, 0);
+    if(!pte) panic("DUPLICATEPAGE: PTE should exist!\n");
+    else if((*pte & PTE_P) != 0){
+      pa = PTE_ADDR(*pte);
+      if(DEBUG) cprintf("DUPLICATEPAGE: physical addr found: %d\n", pa);
+      if(pa == 0) panic("DUPLICATEPAGE: kfree");
+      memmove(mem, (char*)P2V(pa), PGSIZE);  // copy content over
+	  if (DEBUG) cprintf("duplicatePage: copied content from old page %x to new page %x\n", pa, V2P(mem));
+	  // remap
+	  perm = PTE_FLAGS(*pte);
+	  perm &= ~PTE_COW;
+	  perm |= PTE_W;
+	  *pte = 0;
+	  *pte = V2P(mem) | perm | PTE_P;
+	  if (DEBUG) cprintf("duplicatePage: updated PTE for virtual address %x to new physical address %x\n", a, V2P(mem));
+      dec_page_ref(pa);
+	  reset_page_ref(V2P(mem));
+	  inc_page_ref(V2P(mem));
+      if (DEBUG) {
+         cprintf("duplicatePage: set ref count for new page at %x to 1\n", V2P(mem));
+	  }
+    }
+  }
+  lcr3(V2P(p->pgdir)); // flush TLB after we are done
+  return 0;
 }
  
 int
-get_cow_ref_counts(uint pa)
+handle_non_wmap_page_fault(struct proc *p, uint va)
 {
-   return cow_ref_counts[PPN(pa)];
+  pte_t *pte;
+  uint pa;
+  // if no PTE found then it's segfault
+  if((pte = walkpgdir(myproc()->pgdir, (void*)va, 0)) == 0) return -1;
+  if(!(*pte & PTE_P) || !(*pte & PTE_COW)) return -1; // if not present or COW
+  pa = PTE_ADDR(*pte);
+  // Validate reference count
+  if(get_page_ref_count(pa) <= 0) {
+    cprintf("HANDLENONWMAPPAGEFAULT: Invalid reference count\n");
+    return -1;
+  }
+  // if only 1 ref count then we set the perm to writable, shouldn't be lower but we'll catch it here anyway
+  if(get_page_ref_count(pa) == 1){
+	*pte &= ~PTE_COW; // unset COW
+	*pte |= PTE_W;  // set it to writable
+	lcr3(V2P(p->pgdir));  // flush TLB
+	return 0;
+  }
+  cprintf("Duplicating page\n\n");
+  // if more than 1 ref count then we will duplicate it
+  return duplicatePage(p, va, PGSIZE);  
 }
 
+void
+initcowrefcounts()
+{
+  initlock(&ref_count_lock, "ref_count");
+  memset(ref_counts, 0, sizeof(ref_counts));
+}
+
+void inc_page_ref(uint pa) {
+    acquire(&ref_count_lock);
+    
+    uint pfn = (pa/PGSIZE);
+    
+    // Check for overflow
+    if (ref_counts[pfn] < 255) {
+        ref_counts[pfn]++;
+    } else {
+        // Handle max reference count (optional error handling)
+        panic("Page reference count overflow");
+    }
+    release(&ref_count_lock);
+}
+
+int dec_page_ref(uint pa) {
+    acquire(&ref_count_lock);
+    
+    uint pfn = (pa/PGSIZE);
+    
+    // Ensure we don't decrement below 0
+    if (ref_counts[pfn] > 0) {
+        ref_counts[pfn]--;
+    }
+    
+    // If reference count reaches 0, page can be freed
+    int can_free = (ref_counts[pfn] == 0);
+    
+    release(&ref_count_lock);
+    
+    return can_free;
+}
+
+unsigned char get_page_ref_count(uint pa) {
+    uint pfn = (pa/PGSIZE);
+    return ref_counts[pfn];
+}
+
+void reset_page_ref(uint pa) {
+    acquire(&ref_count_lock);
+    
+    uint pfn = (pa/PGSIZE);
+    ref_counts[pfn] = 0;
+    
+    release(&ref_count_lock);
+}
 
 /**
 Actual syscall functions are below
@@ -703,11 +791,7 @@ wmap(uint addr, int length, int flags, int fd)
   // duplicate fd
   int fdToStore = -1;
   if(fd >= 0) fdToStore = duplicateFd(fd);
-  if(fdToStore < 0){
-	if(DEBUG) cprintf("WMAP: Duplicating file descriptor failed;\n");
-  }
   // loop through the process wmap to check if the given addr and length are valid
-  if(DEBUG) cprintf("WMAP: Made it after first checks\n");
   // loop through the process wmap to check if the given addr and length are valid
   for(int i = 0; i < MAX_WMMAP_INFO; i++){
 	// check if it is full
@@ -721,17 +805,13 @@ wmap(uint addr, int length, int flags, int fd)
 
 	// check if given address is free
     if(vasIntersect(addr, length, ((p->wmapInfo).addr)[i], ((p->wmapInfo).length)[i])){
-	  if(DEBUG) cprintf("WMAP: Address intersects %d %d %d %d\n", addr, length, ((p->wmapInfo).addr)[i], ((p->wmapInfo).length)[i]);
 	  return FAILED;
 	}
   }
 
   if(emptySpot == -1) return FAILED; // no empty spot found
-  if(DEBUG) cprintf("WMAP: Updating wmap at index %d with addr %d, file_backed %d, fd %d\n", emptySpot, addr, fileBacked, fdToStore);
   // update the wmap information
   if(updateWmap(p, addr, length, 0, fileBacked, fdToStore, (p->wmapInfo).total_mmaps+1, emptySpot) != 0) return FAILED;
-
-  if(DEBUG) printWmap(p);
 
   return addr;
 }
