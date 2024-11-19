@@ -17,6 +17,9 @@ pde_t *kpgdir;  // for use in scheduler()
 // fileseek and fileread
 extern int fileread(struct file *f, char *addr, int n);
 
+// static array
+static unsigned char cow_ref_counts[PHYSTOP/PGSIZE];
+
 // Set up CPU's kernel segment descriptors.
 // Run once on entry on each CPU.
 void
@@ -485,7 +488,7 @@ int allocateAndMap(struct proc *p, uint addr, int length, int i){
   struct file *f;
   char *mem;
   uint a = PGROUNDDOWN(addr);
-  uint endAddr = a + length; 
+  uint endAddr = a + PGROUNDUP(length); 
 
   if(endAddr >= KERNBASE)  // over the range
 	return -1;
@@ -578,9 +581,9 @@ This function dellocate physical page for a process mapping and remove it. If MA
  }
 
 
- int
- copyWmap(struct proc *parent, struct proc *child)
- { 
+int
+copyWmap(struct proc *parent, struct proc *child)
+{ 
    // no parent or no child
    if(parent == 0 || child == 0) return 0;
    
@@ -598,9 +601,9 @@ This function dellocate physical page for a process mapping and remove it. If MA
      pte_t *pte; 
      uint a, pa, perm;
      a = addr;
-     length = PGROUNDUP(length);  // round up length
-     // loop through the address with the length and copy over the physical page
-     for(; a < (addr+length); a += PGSIZE){
+     
+	// loop through the address with the length and copy over the physical page
+     for(; a < (addr+PGROUNDUP(length)); a += PGSIZE){
        pte = walkpgdir(parent->pgdir, (char*)a, 0);
        if(!pte) continue;
        else if((*pte & PTE_P) != 0){
@@ -621,6 +624,60 @@ This function dellocate physical page for a process mapping and remove it. If MA
    }
    return 0;
  }
+
+
+// COPY ON WRITE
+int
+duplicatePage(struct proc *p, uint addr, int length, int i)
+{
+ /**
+ for a given addr and length, we will duplicate it for process A and make it writable. Then set COW-bit to 0.
+ - We will round the addr down using PGROUNDDOWN and length by PGROUNDUP
+ */
+   char *mem;
+   uint a = PGROUNDDOWN(addr);
+   uint endAddr = a + PGROUNDUP(length);
+   
+   if(endAddr >= KERNBASE)  // over the range
+     return -1;
+   
+   pte_t *pte;
+   uint pa, pfn;
+   
+   for(; a < endAddr; a += PGSIZE){
+     mem = kalloc();
+     if(mem == 0){
+       cprintf("MMAP out of memory\n"); 
+       dellocateAndUnmap(p, endAddr, a, i); // deallocate
+       return FAILED;
+     }
+     // retrieve the physical page and then copy over content
+     pte = walkpgdir(p->pgdir, (char*)a, 0);
+     if(!pte) panic("DUPLICATEPAGE: PTE should exist!\n");
+     else if((*pte & PTE_P) != 0){
+       pa = PTE_ADDR(*pte);
+       if(DEBUG) cprintf("DUPLICATEPAGE: physical addr found: %d\n", pa);
+       if(pa == 0) panic("DUPLICATEPAGE: kfree");
+       memmove(mem, (char*)P2V(pa), PGSIZE);  // copy content over
+       if(mappages(p->pgdir, (char*)a, PGSIZE, V2P(mem), PTE_W | PTE_U | PTE_P) < 0){
+         cprintf("MMAP out of memory (2)\n");
+         kfree(mem);
+         dellocateAndUnmap(p, endAddr, a, i); // deallocate
+         return -1;
+       }
+       pfn = PPN(pa);
+       cow_ref_counts[pfn]--;
+       cow_ref_counts[PPN(V2P(mem))] = 1; // we have just this process
+     }
+   }
+   return SUCCESS;
+}
+ 
+int
+get_cow_ref_counts(uint pa)
+{
+   return cow_ref_counts[PPN(pa)];
+}
 
 
 /**
