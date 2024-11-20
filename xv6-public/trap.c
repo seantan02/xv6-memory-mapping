@@ -54,6 +54,15 @@ trap(struct trapframe *tf)
   case T_PGFLT: // T_PGFLT = 14
 	uint fault_addr = rcr2();  // Get the faulting address (from CR2 register)
 	struct proc *p = myproc();  // Get the current process
+	// check if it's outside the range for wmap
+	if(fault_addr < 0x60000000 || fault_addr >= 0x80000000){
+	  int han = handle_cow_fault(p, fault_addr);
+	  if(han != 0){
+		cprintf("Segmentation Fault\n");
+		p->killed = 1;
+	  }
+	  break;
+	}
 	// Check if fault_addr is within a mapped region in the process's wmap mappings
 	int found_mapping = 0;
 	int index = -1;

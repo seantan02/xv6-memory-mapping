@@ -16,9 +16,15 @@ pde_t *kpgdir;  // for use in scheduler()
 
 // fileseek and fileread
 extern int fileread(struct file *f, char *addr, int n);
+extern unsigned char cow_ref_counts[];
+struct spinlock cow_lock;
 
-// static array
-static unsigned char cow_ref_counts[PHYSTOP/PGSIZE];
+void
+init_cow()
+{
+  initlock(&cow_lock, "cow_lock");
+  memset(cow_ref_counts, 0, 1*1024*1024);
+}
 
 // Set up CPU's kernel segment descriptors.
 // Run once on entry on each CPU.
@@ -200,6 +206,7 @@ inituvm(pde_t *pgdir, char *init, uint sz)
   memset(mem, 0, PGSIZE);
   mappages(pgdir, 0, PGSIZE, V2P(mem), PTE_W|PTE_U);
   memmove(mem, init, sz);
+  set_count(V2P(mem), 1);
 }
 
 // Load a program segment into pgdir.  addr must be page-aligned
@@ -260,6 +267,7 @@ allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
       kfree(mem);
       return 0;
     }
+	set_count(V2P(mem), 1);
   }
   return newsz;
 }
@@ -286,9 +294,10 @@ deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
       pa = PTE_ADDR(*pte);
       if(pa == 0)
         panic("kfree");
+	  if(get_count(pa) > 0) continue;
       char *v = P2V(pa);
-      kfree(v);
-      *pte = 0;
+	  kfree(v);
+	  *pte = 0;
     }
   }
   return newsz;
@@ -303,11 +312,13 @@ freevm(pde_t *pgdir)
 
   if(pgdir == 0)
     panic("freevm: no pgdir");
+
   deallocuvm(pgdir, KERNBASE, 0);
   for(i = 0; i < NPDENTRIES; i++){
     if(pgdir[i] & PTE_P){
+	  if(get_count(PTE_ADDR(pgdir[i])) > 0) continue;
       char * v = P2V(PTE_ADDR(pgdir[i]));
-      kfree(v);
+	  kfree(v);
     }
   }
   kfree((char*)pgdir);
@@ -334,7 +345,6 @@ copyuvm(pde_t *pgdir, uint sz)
   pde_t *d;
   pte_t *pte;
   uint pa, i, flags;
-  char *mem;
 
   if((d = setupkvm()) == 0)
     return 0;
@@ -345,13 +355,21 @@ copyuvm(pde_t *pgdir, uint sz)
       panic("copyuvm: page not present");
     pa = PTE_ADDR(*pte);
     flags = PTE_FLAGS(*pte);
-    if((mem = kalloc()) == 0)
-      goto bad;
-    memmove(mem, (char*)P2V(pa), PGSIZE);
-    if(mappages(d, (void*)i, PGSIZE, V2P(mem), flags) < 0) {
-      kfree(mem);
+	// if writable
+	if(flags & PTE_W){
+	  flags &= ~PTE_W;
+	  flags |= PTE_COW;
+	  flags |= PTE_P | PTE_U;
+	  *pte &= ~PTE_W;
+	  *pte |= PTE_COW;
+	  *pte |= PTE_P | PTE_U;
+	}
+	if(mappages(d, (void*)i, PGSIZE, pa, flags) < 0) {
       goto bad;
     }
+	inc_count(pa);
+	lcr3(V2P(pgdir));
+	lcr3(V2P(d));
   }
   return d;
 
@@ -627,13 +645,51 @@ copyWmap(struct proc *parent, struct proc *child)
 
 
 // COPY ON WRITE
-int
+
+void
+set_count(uint pa, unsigned char count)
+{
+  uint index = PPN(pa);
+  acquire(&cow_lock);
+  cow_ref_counts[index] = count;
+  release(&cow_lock);
+}
+
+void
+inc_count(uint pa)
+{
+  uint index = PPN(pa);
+  acquire(&cow_lock);
+  if(cow_ref_counts[index] < 255)
+    cow_ref_counts[index]++;
+  release(&cow_lock);
+}
+
+void
+dec_count(uint pa)
+{
+  uint index = PPN(pa);
+  acquire(&cow_lock);
+  if(cow_ref_counts[index] > 0)
+	cow_ref_counts[index]--;
+  release(&cow_lock);
+  return;
+}
+
+unsigned char
+get_count(uint pa)
+{
+  acquire(&cow_lock);
+  uint index = PPN(pa);
+  release(&cow_lock);
+  return cow_ref_counts[index];
+}
+
+/*int
 duplicatePage(struct proc *p, uint addr, int length, int i)
 {
- /**
  for a given addr and length, we will duplicate it for process A and make it writable. Then set COW-bit to 0.
  - We will round the addr down using PGROUNDDOWN and length by PGROUNDUP
- */
    char *mem;
    uint a = PGROUNDDOWN(addr);
    uint endAddr = a + PGROUNDUP(length);
@@ -671,15 +727,90 @@ duplicatePage(struct proc *p, uint addr, int length, int i)
      }
    }
    return SUCCESS;
+}*/
+
+int
+handle_cow_fault(struct proc *p, uint fault_addr)
+{
+  pte_t *pte;
+  uint va = PGROUNDDOWN(fault_addr);
+  if(DEBUG) cprintf("[COW_DEBUG] Fault address: 0x%x, Page-aligned: 0x%x\n", fault_addr, va);
+  if(DEBUG) cprintf("[COW_DEBUG] Process size: 0x%x\n", p->sz);
+
+  if(fault_addr >= p->sz){
+	if(DEBUG) cprintf("[COW_DEBUG] FAIL: Fault address beyond process size\n");
+	return -1;
+  }
+ 
+  if((pte = walkpgdir(p->pgdir, (char*)va, 0)) == 0){
+	if(DEBUG) cprintf("[COW_DEBUG] FAIL: Could not find PTE for address\n");
+    return -1;
+  }
+  
+  if(DEBUG) cprintf("[COW_DEBUG] PTE contents: 0x%x\n", *pte);
+  if(DEBUG) cprintf("[COW_DEBUG] PTE flags: Present=%d, User=%d, Writable=%d, COW=%d\n", 
+          (*pte & PTE_P) ? 1 : 0,
+          (*pte & PTE_U) ? 1 : 0,
+          (*pte & PTE_W) ? 1 : 0,
+          (*pte & PTE_COW) ? 1 : 0);
+
+  if((*pte & PTE_P) == 0 || (*pte & PTE_U) == 0){
+	if(DEBUG) cprintf("[COW_DEBUG] FAIL: Page not present or not user-accessible\n");
+    return -1;
+  }
+    
+  // Check if this is actually a COW page
+  if((*pte & PTE_COW) == 0){
+	if(DEBUG) cprintf("[COW_DEBUG] FAIL: Not a COW page (PTE=0x%x)\n", *pte);
+    return -1;
+  }
+    
+  uint pa = PTE_ADDR(*pte);
+  if(DEBUG) cprintf("[COW_DEBUG] Physical address: 0x%x\n", pa);
+  unsigned char ref_count = get_count(pa);
+  if(DEBUG) cprintf("[COW_DEBUG] Reference count for page: %d\n", ref_count);
+
+  if(ref_count < 1){
+	if(DEBUG) cprintf("[COW_DEBUG] FAIL: Invalid reference count of 0\n");
+	return -1;
+  } 
+ 
+  // If reference count is 1, just make it writable
+  if(ref_count == 1) {
+	if(DEBUG) cprintf("[COW_DEBUG] Single reference, converting to writable\n");
+    *pte |= PTE_W;
+    *pte &= ~PTE_COW;
+    lcr3(V2P(p->pgdir));  // Flush TLB
+    return 0;
+  }
+  
+  if(DEBUG) cprintf("[COW_DEBUG] Multiple references (%d), creating new page\n", ref_count);
+  // Otherwise, need to allocate new page and copy
+  char *mem = kalloc();
+  if(mem == 0){
+	if(DEBUG) cprintf("MEM IS ZERO!\n");
+	return -1;
+  }
+
+  memmove(mem, (char*)P2V(pa), PGSIZE);
+  dec_count(pa);
+  // Map the new page with write permission
+  uint flags = (PTE_FLAGS(*pte) | PTE_W) & ~PTE_COW;
+  *pte = 0; // unmap
+
+  if(mappages(p->pgdir, (char*)PGROUNDDOWN(va), PGSIZE, V2P(mem), flags) != 0) {
+    kfree(mem);
+    return -1;
+  }
+  
+  // Set reference count of new page to 1
+  set_count(V2P(mem), 1);
+  // Flush TLB
+  lcr3(V2P(p->pgdir));
+  
+  return 0;
 }
  
-int
-get_cow_ref_counts(uint pa)
-{
-   return cow_ref_counts[PPN(pa)];
-}
-
-
 /**
 Actual syscall functions are below
 */

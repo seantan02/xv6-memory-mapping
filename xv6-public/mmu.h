@@ -98,7 +98,7 @@ struct segdesc {
 
 // ADDED for COW
 #define PGSHIFT			12		// offset of PFN
-#define PTE_COW			0x200	// Page is COW
+#define PTE_COW			0x400	// Page is COW
 #define PPN(pa)			((uint)pa >> PGSHIFT)  // For retriving PFN
 
 // Address in page table or page directory entry
