@@ -54,6 +54,15 @@ trap(struct trapframe *tf)
   case T_PGFLT: // T_PGFLT = 14
 	uint fault_addr = rcr2();  // Get the faulting address (from CR2 register)
 	struct proc *p = myproc();  // Get the current process
+
+	if(fault_addr < 0x60000000 || fault_addr >= 0x80000000) {
+	  if(handle_non_wmap_page_fault(p, fault_addr) != 0){
+        cprintf("Segmentation Fault\n", rcr2());
+        myproc()->killed = 1;
+        break;
+	  }
+    }
+
 	// Check if fault_addr is within a mapped region in the process's wmap mappings
 	int found_mapping = 0;
 	int index = -1;
@@ -74,11 +83,7 @@ trap(struct trapframe *tf)
 		cprintf("Allocating and mapping failed\n");
 		myproc()->killed = 1;
 	  }
-	}else{
-	  cprintf("Segmentation Fault\n");
-	  myproc()->killed = 1;
 	}
-	
 	break;
 
   case T_IRQ0 + IRQ_TIMER:

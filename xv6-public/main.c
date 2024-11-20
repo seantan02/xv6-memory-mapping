@@ -12,7 +12,7 @@ extern pde_t *kpgdir;
 extern char end[]; // first address after kernel loaded from ELF file
 
 // used for debugging
-int DEBUG = 0;
+int DEBUG = 1;
 
 // Bootstrap processor starts running C code here.
 // Allocate a real stack and switch to it, first
@@ -22,6 +22,7 @@ main(void)
 {
   kinit1(end, P2V(4*1024*1024)); // phys page allocator
   kvmalloc();      // kernel page table
+  initcowrefcounts(); 
   mpinit();        // detect other processors
   lapicinit();     // interrupt controller
   seginit();       // segment descriptors
