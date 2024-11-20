@@ -16,10 +16,15 @@ pde_t *kpgdir;  // for use in scheduler()
 
 // fileseek and fileread
 extern int fileread(struct file *f, char *addr, int n);
+extern unsigned char cow_ref_counts[];
+struct spinlock cow_lock;
 
-// static array
-unsigned char ref_counts[4 * 1024 * 1024 / PGSIZE];
-struct spinlock ref_count_lock;
+void
+init_cow()
+{
+  initlock(&cow_lock, "cow_lock");
+  memset(cow_ref_counts, 0, 1*1024*1024);
+}
 
 // Set up CPU's kernel segment descriptors.
 // Run once on entry on each CPU.
@@ -201,6 +206,7 @@ inituvm(pde_t *pgdir, char *init, uint sz)
   memset(mem, 0, PGSIZE);
   mappages(pgdir, 0, PGSIZE, V2P(mem), PTE_W|PTE_U);
   memmove(mem, init, sz);
+  set_count(V2P(mem), 1);
 }
 
 // Load a program segment into pgdir.  addr must be page-aligned
@@ -261,6 +267,7 @@ allocuvm(pde_t *pgdir, uint oldsz, uint newsz)
       kfree(mem);
       return 0;
     }
+	set_count(V2P(mem), 1);
   }
   return newsz;
 }
@@ -287,9 +294,10 @@ deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
       pa = PTE_ADDR(*pte);
       if(pa == 0)
         panic("kfree");
+	  if(get_count(pa) > 0) continue;
       char *v = P2V(pa);
-      kfree(v);
-      *pte = 0;
+	  kfree(v);
+	  *pte = 0;
     }
   }
   return newsz;
@@ -304,13 +312,13 @@ freevm(pde_t *pgdir)
 
   if(pgdir == 0)
     panic("freevm: no pgdir");
+
   deallocuvm(pgdir, KERNBASE, 0);
   for(i = 0; i < NPDENTRIES; i++){
     if(pgdir[i] & PTE_P){
+	  if(get_count(PTE_ADDR(pgdir[i])) > 0) continue;
       char * v = P2V(PTE_ADDR(pgdir[i]));
-	  if(dec_page_ref((uint)v)) {
-        kfree(v);
-      }
+	  kfree(v);
     }
   }
   kfree((char*)pgdir);
@@ -347,17 +355,21 @@ copyuvm(pde_t *pgdir, uint sz)
       panic("copyuvm: page not present");
     pa = PTE_ADDR(*pte);
     flags = PTE_FLAGS(*pte);
-	// modification for COW:
-	// Mark it as COW if it's writable and then map it to the same page in child
-    if(flags & PTE_W){
+	// if writable
+	if(flags & PTE_W){
 	  flags &= ~PTE_W;
 	  flags |= PTE_COW;
-	  *pte = (*pte & ~PTE_W) | PTE_COW;
+	  flags |= PTE_P | PTE_U;
+	  *pte &= ~PTE_W;
+	  *pte |= PTE_COW;
+	  *pte |= PTE_P | PTE_U;
 	}
-    if(mappages(d, (void*)i, PGSIZE, pa, flags) < 0) {
+	if(mappages(d, (void*)i, PGSIZE, pa, flags) < 0) {
       goto bad;
     }
-	inc_page_ref(pa);
+	inc_count(pa);
+	lcr3(V2P(pgdir));
+	lcr3(V2P(d));
   }
   return d;
 
@@ -633,141 +645,127 @@ copyWmap(struct proc *parent, struct proc *child)
 
 
 // COPY ON WRITE
-int
-duplicatePage(struct proc *p, uint addr, int length)
+void
+set_count(uint pa, unsigned char count)
 {
- /**
- for a given addr and length, we will duplicate it for process A and make it writable. Then set COW-bit to 0.
- - We will round the addr down using PGROUNDDOWN and length by PGROUNDUP
- */
-  if (DEBUG) cprintf("duplicatePage: called with addr: %x, length: %d\n", addr, length);
-  char *mem;
-  uint a = PGROUNDDOWN(addr);
-  uint endAddr = a + PGROUNDUP(length);
- 
-  if(endAddr >= KERNBASE){  // over the range
-    if (DEBUG) cprintf("duplicatePage: address out of range, endAddr: %x\n", endAddr);
-	return -1;
-  }
-   
-  pte_t *pte;
-  uint pa, perm;   
-
-  for(; a < endAddr; a += PGSIZE){
-    mem = kalloc();
-    if(mem == 0){
-      cprintf("MMAP out of memory\n"); 
-      return -1;
-    }
-	if (DEBUG) cprintf("duplicatePage: allocated new page at %x for address %x\n", V2P(mem), a);
-    // retrieve the physical page and then copy over content
-    pte = walkpgdir(p->pgdir, (char*)a, 0);
-    if(!pte) panic("DUPLICATEPAGE: PTE should exist!\n");
-    else if((*pte & PTE_P) != 0){
-      pa = PTE_ADDR(*pte);
-      if(DEBUG) cprintf("DUPLICATEPAGE: physical addr found: %d\n", pa);
-      if(pa == 0) panic("DUPLICATEPAGE: kfree");
-      memmove(mem, (char*)P2V(pa), PGSIZE);  // copy content over
-	  if (DEBUG) cprintf("duplicatePage: copied content from old page %x to new page %x\n", pa, V2P(mem));
-	  // remap
-	  perm = PTE_FLAGS(*pte);
-	  perm &= ~PTE_COW;
-	  perm |= PTE_W;
-	  *pte = 0;
-	  *pte = V2P(mem) | perm | PTE_P;
-	  if (DEBUG) cprintf("duplicatePage: updated PTE for virtual address %x to new physical address %x\n", a, V2P(mem));
-      dec_page_ref(pa);
-	  reset_page_ref(V2P(mem));
-	  inc_page_ref(V2P(mem));
-      if (DEBUG) {
-         cprintf("duplicatePage: set ref count for new page at %x to 1\n", V2P(mem));
-	  }
-    }
-  }
-  lcr3(V2P(p->pgdir)); // flush TLB after we are done
-  return 0;
-}
- 
-int
-handle_non_wmap_page_fault(struct proc *p, uint va)
-{
-  pte_t *pte;
-  uint pa;
-  // if no PTE found then it's segfault
-  if((pte = walkpgdir(myproc()->pgdir, (void*)va, 0)) == 0) return -1;
-  if(!(*pte & PTE_P) || !(*pte & PTE_COW)) return -1; // if not present or COW
-  pa = PTE_ADDR(*pte);
-  // Validate reference count
-  if(get_page_ref_count(pa) <= 0) {
-    cprintf("HANDLENONWMAPPAGEFAULT: Invalid reference count\n");
-    return -1;
-  }
-  // if only 1 ref count then we set the perm to writable, shouldn't be lower but we'll catch it here anyway
-  if(get_page_ref_count(pa) == 1){
-	*pte &= ~PTE_COW; // unset COW
-	*pte |= PTE_W;  // set it to writable
-	lcr3(V2P(p->pgdir));  // flush TLB
-	return 0;
-  }
-  cprintf("Duplicating page\n\n");
-  // if more than 1 ref count then we will duplicate it
-  return duplicatePage(p, va, PGSIZE);  
+  uint index = PPN(pa);
+  acquire(&cow_lock);
+  cow_ref_counts[index] = count;
+  release(&cow_lock);
 }
 
 void
-initcowrefcounts()
+inc_count(uint pa)
 {
-  initlock(&ref_count_lock, "ref_count");
-  memset(ref_counts, 0, sizeof(ref_counts));
+  uint index = PPN(pa);
+  acquire(&cow_lock);
+  if(cow_ref_counts[index] < 255)
+    cow_ref_counts[index]++;
+  release(&cow_lock);
 }
 
-void inc_page_ref(uint pa) {
-    acquire(&ref_count_lock);
-    
-    uint pfn = (pa/PGSIZE);
-    
-    // Check for overflow
-    if (ref_counts[pfn] < 255) {
-        ref_counts[pfn]++;
-    } else {
-        // Handle max reference count (optional error handling)
-        panic("Page reference count overflow");
-    }
-    release(&ref_count_lock);
+void
+dec_count(uint pa)
+{
+  uint index = PPN(pa);
+  acquire(&cow_lock);
+  if(cow_ref_counts[index] > 0)
+	cow_ref_counts[index]--;
+  release(&cow_lock);
+  return;
 }
 
-int dec_page_ref(uint pa) {
-    acquire(&ref_count_lock);
-    
-    uint pfn = (pa/PGSIZE);
-    
-    // Ensure we don't decrement below 0
-    if (ref_counts[pfn] > 0) {
-        ref_counts[pfn]--;
-    }
-    
-    // If reference count reaches 0, page can be freed
-    int can_free = (ref_counts[pfn] == 0);
-    
-    release(&ref_count_lock);
-    
-    return can_free;
+unsigned char
+get_count(uint pa)
+{
+  acquire(&cow_lock);
+  uint index = PPN(pa);
+  release(&cow_lock);
+  return cow_ref_counts[index];
 }
+   
+int
+handle_cow_fault(struct proc *p, uint fault_addr)
+{
+  pte_t *pte;
+  uint va = PGROUNDDOWN(fault_addr);
+  if(DEBUG) cprintf("[COW_DEBUG] Fault address: 0x%x, Page-aligned: 0x%x\n", fault_addr, va);
+  if(DEBUG) cprintf("[COW_DEBUG] Process size: 0x%x\n", p->sz);
 
-unsigned char get_page_ref_count(uint pa) {
-    uint pfn = (pa/PGSIZE);
-    return ref_counts[pfn];
-}
+  if(fault_addr >= p->sz){
+	if(DEBUG) cprintf("[COW_DEBUG] FAIL: Fault address beyond process size\n");
+	return -1;
+  }
+ 
+  if((pte = walkpgdir(p->pgdir, (char*)va, 0)) == 0){
+	if(DEBUG) cprintf("[COW_DEBUG] FAIL: Could not find PTE for address\n");
+    return -1;
+  }
+  
+  if(DEBUG) cprintf("[COW_DEBUG] PTE contents: 0x%x\n", *pte);
+  if(DEBUG) cprintf("[COW_DEBUG] PTE flags: Present=%d, User=%d, Writable=%d, COW=%d\n", 
+          (*pte & PTE_P) ? 1 : 0,
+          (*pte & PTE_U) ? 1 : 0,
+          (*pte & PTE_W) ? 1 : 0,
+          (*pte & PTE_COW) ? 1 : 0);
 
-void reset_page_ref(uint pa) {
-    acquire(&ref_count_lock);
+  if((*pte & PTE_P) == 0 || (*pte & PTE_U) == 0){
+	if(DEBUG) cprintf("[COW_DEBUG] FAIL: Page not present or not user-accessible\n");
+    return -1;
+  }
     
-    uint pfn = (pa/PGSIZE);
-    ref_counts[pfn] = 0;
+  // Check if this is actually a COW page
+  if((*pte & PTE_COW) == 0){
+	if(DEBUG) cprintf("[COW_DEBUG] FAIL: Not a COW page (PTE=0x%x)\n", *pte);
+    return -1;
+  }
     
-    release(&ref_count_lock);
-}
+  uint pa = PTE_ADDR(*pte);
+  if(DEBUG) cprintf("[COW_DEBUG] Physical address: 0x%x\n", pa);
+  unsigned char ref_count = get_count(pa);
+  if(DEBUG) cprintf("[COW_DEBUG] Reference count for page: %d\n", ref_count);
 
+  if(ref_count < 1){
+	if(DEBUG) cprintf("[COW_DEBUG] FAIL: Invalid reference count of 0\n");
+	return -1;
+  } 
+ 
+  // If reference count is 1, just make it writable
+  if(ref_count == 1) {
+	if(DEBUG) cprintf("[COW_DEBUG] Single reference, converting to writable\n");
+    *pte |= PTE_W;
+    *pte &= ~PTE_COW;
+    lcr3(V2P(p->pgdir));  // Flush TLB
+    return 0;
+  }
+  
+  if(DEBUG) cprintf("[COW_DEBUG] Multiple references (%d), creating new page\n", ref_count);
+  // Otherwise, need to allocate new page and copy
+  char *mem = kalloc();
+  if(mem == 0){
+	if(DEBUG) cprintf("MEM IS ZERO!\n");
+	return -1;
+  }
+
+  memmove(mem, (char*)P2V(pa), PGSIZE);
+  dec_count(pa);
+  // Map the new page with write permission
+  uint flags = (PTE_FLAGS(*pte) | PTE_W) & ~PTE_COW;
+  *pte = 0; // unmap
+
+  if(mappages(p->pgdir, (char*)PGROUNDDOWN(va), PGSIZE, V2P(mem), flags) != 0) {
+    kfree(mem);
+    return -1;
+  }
+  
+  // Set reference count of new page to 1
+  set_count(V2P(mem), 1);
+  // Flush TLB
+  lcr3(V2P(p->pgdir));
+  
+  return 0;
+}
+ 
 /**
 Actual syscall functions are below
 */

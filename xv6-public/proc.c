@@ -208,6 +208,8 @@ fork(void)
     np->state = UNUSED;
     return -1;
   }
+  lcr3(V2P(curproc->pgdir));
+  lcr3(V2P(np->pgdir));
   np->sz = curproc->sz;
   np->parent = curproc;
   *np->tf = *curproc->tf;
@@ -266,6 +268,13 @@ exit(void)
 	wunmap(addr);  // unmap the address
   }
 
+  // decrement count for all pages
+  for(int i = 0; i < NPDENTRIES; i++){
+	if(curproc->pgdir[i] & PTE_P){
+	  dec_count(PTE_ADDR(curproc->pgdir[i]));
+	}
+  }
+ 
 
   // Close all open files.
   for(fd = 0; fd < NOFILE; fd++){
