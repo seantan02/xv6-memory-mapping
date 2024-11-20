@@ -83,11 +83,7 @@ trap(struct trapframe *tf)
 		cprintf("Allocating and mapping failed\n");
 		myproc()->killed = 1;
 	  }
-	}else{
-	  cprintf("Segmentation Fault\n");
-	  myproc()->killed = 1;
 	}
-	
 	break;
 
   case T_IRQ0 + IRQ_TIMER:

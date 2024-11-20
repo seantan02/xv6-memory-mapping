@@ -645,7 +645,6 @@ copyWmap(struct proc *parent, struct proc *child)
 
 
 // COPY ON WRITE
-
 void
 set_count(uint pa, unsigned char count)
 {
@@ -684,51 +683,7 @@ get_count(uint pa)
   release(&cow_lock);
   return cow_ref_counts[index];
 }
-
-/*int
-duplicatePage(struct proc *p, uint addr, int length, int i)
-{
- for a given addr and length, we will duplicate it for process A and make it writable. Then set COW-bit to 0.
- - We will round the addr down using PGROUNDDOWN and length by PGROUNDUP
-   char *mem;
-   uint a = PGROUNDDOWN(addr);
-   uint endAddr = a + PGROUNDUP(length);
    
-   if(endAddr >= KERNBASE)  // over the range
-     return -1;
-   
-   pte_t *pte;
-   uint pa, pfn;
-   
-   for(; a < endAddr; a += PGSIZE){
-     mem = kalloc();
-     if(mem == 0){
-       cprintf("MMAP out of memory\n"); 
-       dellocateAndUnmap(p, endAddr, a, i); // deallocate
-       return FAILED;
-     }
-     // retrieve the physical page and then copy over content
-     pte = walkpgdir(p->pgdir, (char*)a, 0);
-     if(!pte) panic("DUPLICATEPAGE: PTE should exist!\n");
-     else if((*pte & PTE_P) != 0){
-       pa = PTE_ADDR(*pte);
-       if(DEBUG) cprintf("DUPLICATEPAGE: physical addr found: %d\n", pa);
-       if(pa == 0) panic("DUPLICATEPAGE: kfree");
-       memmove(mem, (char*)P2V(pa), PGSIZE);  // copy content over
-       if(mappages(p->pgdir, (char*)a, PGSIZE, V2P(mem), PTE_W | PTE_U | PTE_P) < 0){
-         cprintf("MMAP out of memory (2)\n");
-         kfree(mem);
-         dellocateAndUnmap(p, endAddr, a, i); // deallocate
-         return -1;
-       }
-       pfn = PPN(pa);
-       cow_ref_counts[pfn]--;
-       cow_ref_counts[PPN(V2P(mem))] = 1; // we have just this process
-     }
-   }
-   return SUCCESS;
-}*/
-
 int
 handle_cow_fault(struct proc *p, uint fault_addr)
 {
@@ -834,11 +789,7 @@ wmap(uint addr, int length, int flags, int fd)
   // duplicate fd
   int fdToStore = -1;
   if(fd >= 0) fdToStore = duplicateFd(fd);
-  if(fdToStore < 0){
-	if(DEBUG) cprintf("WMAP: Duplicating file descriptor failed;\n");
-  }
   // loop through the process wmap to check if the given addr and length are valid
-  if(DEBUG) cprintf("WMAP: Made it after first checks\n");
   // loop through the process wmap to check if the given addr and length are valid
   for(int i = 0; i < MAX_WMMAP_INFO; i++){
 	// check if it is full
@@ -852,17 +803,13 @@ wmap(uint addr, int length, int flags, int fd)
 
 	// check if given address is free
     if(vasIntersect(addr, length, ((p->wmapInfo).addr)[i], ((p->wmapInfo).length)[i])){
-	  if(DEBUG) cprintf("WMAP: Address intersects %d %d %d %d\n", addr, length, ((p->wmapInfo).addr)[i], ((p->wmapInfo).length)[i]);
 	  return FAILED;
 	}
   }
 
   if(emptySpot == -1) return FAILED; // no empty spot found
-  if(DEBUG) cprintf("WMAP: Updating wmap at index %d with addr %d, file_backed %d, fd %d\n", emptySpot, addr, fileBacked, fdToStore);
   // update the wmap information
   if(updateWmap(p, addr, length, 0, fileBacked, fdToStore, (p->wmapInfo).total_mmaps+1, emptySpot) != 0) return FAILED;
-
-  if(DEBUG) printWmap(p);
 
   return addr;
 }
