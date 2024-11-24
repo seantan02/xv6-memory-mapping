@@ -116,6 +116,7 @@ found:
   p->context->eip = (uint)forkret;
   // initialize the process wmap
   p->wmapInfo.total_mmaps = 0;
+  ((p->wmapInfoExtra).is_child) = 0;
   for(int i = 0; i<MAX_WMMAP_INFO; i++){
 	((p->wmapInfo).addr)[i] = 0;
 	((p->wmapInfo).length)[i] = -1;
@@ -210,6 +211,9 @@ fork(void)
   }
   lcr3(V2P(curproc->pgdir));
   lcr3(V2P(np->pgdir));
+  // mark it as a child
+  (np->wmapInfoExtra).is_child = 1;
+
   np->sz = curproc->sz;
   np->parent = curproc;
   *np->tf = *curproc->tf;
