@@ -235,6 +235,8 @@ loaduvm(pde_t *pgdir, char *addr, struct inode *ip, uint offset, uint sz, uint f
 	*pte &= ~PTE_W;
 	if(flags & PTE_W)
 	  *pte |= PTE_W;  
+	lcr3(V2P(pgdir));
+
   }
   return 0;
 }
@@ -294,9 +296,10 @@ deallocuvm(pde_t *pgdir, uint oldsz, uint newsz)
       pa = PTE_ADDR(*pte);
       if(pa == 0)
         panic("kfree");
-	  if(get_count(pa) > 0) continue;
-      char *v = P2V(pa);
-	  kfree(v);
+	  if(get_count(pa) == 0){
+	    char *v = P2V(pa);
+		kfree(v);
+	  }
 	  *pte = 0;
     }
   }
@@ -583,8 +586,7 @@ This function dellocate physical page for a process mapping and remove it. If MA
 		  f->off = offset;
 		  if(filewrite(f, v, PGSIZE) < 0) return FAILED;
 		}
-
-        kfree(v);
+		if(!(p->wmapInfoExtra).is_child) kfree(v);
         *pte = 0;
       }
     }
@@ -688,16 +690,13 @@ int
 handle_cow_fault(struct proc *p, uint fault_addr)
 {
   pte_t *pte;
-  uint va = PGROUNDDOWN(fault_addr);
-  if(DEBUG) cprintf("[COW_DEBUG] Fault address: 0x%x, Page-aligned: 0x%x\n", fault_addr, va);
-  if(DEBUG) cprintf("[COW_DEBUG] Process size: 0x%x\n", p->sz);
 
   if(fault_addr >= p->sz){
 	if(DEBUG) cprintf("[COW_DEBUG] FAIL: Fault address beyond process size\n");
 	return -1;
   }
  
-  if((pte = walkpgdir(p->pgdir, (char*)va, 0)) == 0){
+  if((pte = walkpgdir(p->pgdir, (char*)fault_addr, 0)) == 0){
 	if(DEBUG) cprintf("[COW_DEBUG] FAIL: Could not find PTE for address\n");
     return -1;
   }
@@ -753,7 +752,7 @@ handle_cow_fault(struct proc *p, uint fault_addr)
   uint flags = (PTE_FLAGS(*pte) | PTE_W) & ~PTE_COW;
   *pte = 0; // unmap
 
-  if(mappages(p->pgdir, (char*)PGROUNDDOWN(va), PGSIZE, V2P(mem), flags) != 0) {
+  if(mappages(p->pgdir, (char*)PGROUNDDOWN(fault_addr), PGSIZE, V2P(mem), flags) != 0) {
     kfree(mem);
     return -1;
   }

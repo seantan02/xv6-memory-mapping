@@ -24,6 +24,7 @@ struct wmapinfo {
 struct wmapinfoExtra{
 	int file_backed[MAX_WMMAP_INFO];
 	int fd[MAX_WMMAP_INFO];
+	int is_child;
 };
 
 // helper functions
